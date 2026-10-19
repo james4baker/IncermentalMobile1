@@ -5,7 +5,7 @@ import { addItem } from './items';
 import { levelForXp } from './levels';
 import { rollLoot } from './loot';
 import { playerStats } from './player';
-import { currentArea, keysHeld, nextArea, spawn } from './progression';
+import { currentArea, enterLair, keysHeld, nextArea, spawn } from './progression';
 import type { GameState } from './state';
 
 export type GameEvent =
@@ -50,7 +50,8 @@ function onKill(state: GameState, events: GameEvent[]): void {
     if (firstDefeat) state.bossesDefeated.push(area.id);
     state.inLair = false;
     events.push({ type: 'bossDefeated', areaId: area.id, unlockedAreaId: firstDefeat ? nextArea(area.id)?.id : undefined });
-    spawn(state, area.creatures[0]!);
+    // With keys left, stay in the lair and fight the next boss; otherwise go back to lesser creatures.
+    if (!enterLair(state)) spawn(state, area.creatures[0]!);
     return;
   }
 

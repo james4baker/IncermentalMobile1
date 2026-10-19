@@ -49,13 +49,38 @@ export function sellPrice(itemId: ItemId): Decimal {
   return new Decimal(Math.floor(itemBalance(itemId).value * CONFIG.shop.sellFraction));
 }
 
-/** Sell an unequipped item. */
+/** Sell every unequipped item matching the predicate. Returns gold gained. */
+function sellWhere(state: GameState, pred: (item: ItemInstance) => boolean): Decimal {
+  let gained = new Decimal(0);
+  state.inventory = state.inventory.filter((item) => {
+    if (!pred(item)) return true;
+    gained = gained.add(sellPrice(item.itemId));
+    return false;
+  });
+  state.gold = state.gold.add(gained);
+  return gained;
+}
+
+/** Sell one unequipped item. */
 export function sell(state: GameState, uid: number): boolean {
-  const index = state.inventory.findIndex((i) => i.uid === uid);
-  if (index < 0) return false;
-  const [item] = state.inventory.splice(index, 1);
-  state.gold = state.gold.add(sellPrice(item!.itemId));
-  return true;
+  const before = state.inventory.length;
+  sellWhere(state, (i) => i.uid === uid);
+  return state.inventory.length < before;
+}
+
+/** Sell every unequipped copy of an item. */
+export function sellAllOf(state: GameState, itemId: ItemId): Decimal {
+  return sellWhere(state, (i) => i.itemId === itemId);
+}
+
+/** Sell everything in the bag (equipped items are kept). */
+export function sellBag(state: GameState): Decimal {
+  return sellWhere(state, () => true);
+}
+
+/** Gold the whole bag would sell for. */
+export function bagValue(state: GameState): Decimal {
+  return state.inventory.reduce((sum, i) => sum.add(sellPrice(i.itemId)), new Decimal(0));
 }
 
 export function gearBonuses(state: GameState): GearBonuses {

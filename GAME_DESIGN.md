@@ -45,6 +45,7 @@ Level targets: farming rats until the key drops (~30 kills) should put the playe
 - Lesser creatures can drop their area boss's key. Keys stack.
 - A key lets you into the boss's lair for **one kill**. The key is used when you enter.
 - **Boss fights can't be failed.** An under-levelled player just takes a long time to win.
+- After a boss dies, if the player holds another key for that area, it is used automatically and the next boss fight starts. With no keys left, the player returns to the lesser creatures.
 - Bosses can be re-fought (with another key) for more loot rolls.
 
 ## Gear
@@ -53,7 +54,8 @@ Equipment slots: **head, chest, hands, legs, ring ×2, necklace**.
 - Equipped items give **% damage** and **% attack speed** (e.g. +0.5% dmg, +1.2% speed). Better gear gives more.
 - Bonuses from all equipped items add together, then multiply the player's level-based damage and attack speed.
 - Uniques can have special effects, e.g. **double hit chance** (an attack strikes twice).
-- Gear can be sold for a fraction of its value (`shop.sellFraction` in `config.ts`).
+- Gear can be sold for a fraction of its value (`shop.sellFraction` in `config.ts`): one at a time, all copies of an item, or the whole bag (two taps to confirm). Equipped items are never sold.
+- The bag can be sorted by damage, attack speed or value. Identical items are grouped.
 
 | Tier | Source | Pieces |
 |---|---|---|

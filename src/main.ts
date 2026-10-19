@@ -1,7 +1,7 @@
 import './ui/styles.css';
 import { CONFIG } from './config';
 import { tap, tick } from './game/combat';
-import { equip, sell, unequip } from './game/items';
+import { equip, sell, sellAllOf, sellBag, unequip } from './game/items';
 import { enterLair, selectArea } from './game/progression';
 import { buy, refreshShop, updateShop } from './game/shop';
 import { loadGame, saveGame } from './save';
@@ -34,6 +34,8 @@ const gear = createGearView(shell.screens.gear, {
   equip: (uid, slot) => equip(state, uid, slot),
   unequip: (slot) => unequip(state, slot),
   sell: (uid) => sell(state, uid),
+  sellAllOf: (itemId) => sellAllOf(state, itemId),
+  sellBag: () => sellBag(state),
 });
 const shop = createShopView(shell.screens.shop, {
   buy: (index) => buy(state, index),

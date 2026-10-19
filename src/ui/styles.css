@@ -259,6 +259,46 @@ body {
   background: #3a3e4d;
 }
 
+.btn-danger {
+  background: #6b2f37;
+}
+
+.btn-danger.armed {
+  background: #c0392b;
+}
+
+.bag-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #3a3e4d;
+  border-radius: 22px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 .btn:disabled {
   background: #2e313c;
   color: var(--muted);
