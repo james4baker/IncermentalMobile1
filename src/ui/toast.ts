@@ -1,4 +1,4 @@
-import type { GameEvent } from '../game/combat';
+import type { GameEvent } from '../game/events';
 import { AREAS } from '../data/areas';
 import { CREATURES } from '../data/creatures';
 import { ITEMS } from '../data/items';

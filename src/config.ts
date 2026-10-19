@@ -181,14 +181,46 @@ export const CONFIG = {
     sellFraction: 0.25,
   },
 
+  /** Run length grows with level: base + perLevel * (level - 1), capped. */
+  run: {
+    baseSeconds: 30,
+    secondsPerLevel: 2,
+    maxSeconds: 300,
+  },
+
+  /** Arena space is in world units; the canvas scales it to the screen. */
+  arena: {
+    width: 100,
+    height: 130,
+    /** Lesser creatures alive at once. */
+    maxEnemies: 6,
+    /** Seconds between spawns while below maxEnemies. */
+    spawnInterval: 1.2,
+    /** New enemies spawn at least this far from the player. */
+    spawnMinDistance: 25,
+    playerSpeed: 28,
+    enemySpeed: 6,
+    bossSpeed: 3,
+    /** Auto-attack reach. */
+    attackRange: 9,
+    /** Tap strikes every enemy within this radius of the tap. */
+    tapRadius: 12,
+    /** Body sizes, used for drawing and spacing. */
+    playerRadius: 4,
+    enemyRadius: 4.5,
+    bossRadius: 9,
+  },
+
   tick: {
     /** Largest delta (seconds) simulated in one frame. Stops huge jumps after the tab sleeps. */
     maxDeltaSeconds: 1,
+    /** Movement is simulated in steps no longer than this. */
+    maxStepSeconds: 0.05,
   },
 
   save: {
     key: 'incremental1.save',
-    version: 4,
+    version: 5,
     intervalMs: 5000,
   },
 } as const;

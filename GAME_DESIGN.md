@@ -3,22 +3,35 @@
 ## Overview
 - **Genre:** Incremental / idle RPG with loot and crafting
 - **Platform:** Mobile (Android + iOS), portrait, one-handed play
-- **Session style:** Short check-ins (1–5 min), fights and progress continue while offline
+- **Session style:** Timed hunting runs (30s at level 1, longer as you level). **Nothing progresses outside a run.**
 - **Core fantasy:** Start weak, hunt creatures and bosses, collect loot, craft the perfect weapon
 
 ## Core Loop
-1. Fight an area's lesser creatures (auto-battle, tap to deal extra damage)
-2. Earn gold and XP; lesser creatures have a small chance to drop the area boss's **key**
-3. Use a key to enter the boss's lair for one fight
-4. Defeating a boss for the first time unlocks the next area's lesser creatures
-5. Bosses drop loot: sellables, weapons and armour
-6. Dismantle items to extract their **prefix** or **suffix**, pay gold to mount it onto another weapon
-7. Equip the improved gear, beat tougher bosses, repeat
+1. Pick an area on the Hunt map and start a **timed run** in its arena
+2. Your character hunts the area's lesser creatures automatically; tap to strike an area, or use Move to reposition
+3. Earn gold, XP and loot; lesser creatures have a small chance to drop the area boss's **key**
+4. When time's up, review the loot and **Go again** or **Return to map**
+5. Spend a key to enter the area's **boss room**
+6. Defeating a boss for the first time unlocks the next area
+7. Equip better gear, beat tougher bosses, repeat (forging comes later)
 
 ```
-Farm lesser creatures → key drops (e.g. 1 in 30) → enter lair → defeat boss
-→ next area unlocks → loot → forge better gear → repeat
+Hunting run → loot + keys → boss room → next area unlocks → better gear → repeat
 ```
+
+## Hunting Runs (arena)
+- The Hunt tab is a **map of area cards**, each with **Hunt** (start a run) and **Boss room** (needs a key).
+- A run takes place in a portrait arena with several lesser creatures wandering around (`arena.maxEnemies`, respawning every `arena.spawnInterval`).
+- **The character moves on its own**: it walks to the nearest enemy and auto-attacks when in reach.
+- **Tap**: strikes every enemy within a small radius of the tap (`arena.tapRadius`), using tap damage.
+- **Move button**: tap Move, then tap a spot; the character walks there, then goes back to hunting (attacking anything in reach on the way).
+- **Time limit**: `run.baseSeconds + run.secondsPerLevel × (level − 1)`, capped at `run.maxSeconds`. Set when the run starts. Levelling up is the upgrade path.
+- **End run** (two taps) leaves early. Loot, XP and keys are applied to the player the moment they drop, so leaving or closing the app never loses them; the run itself isn't saved.
+- **Results screen**: kills, gold, XP, level change, keys found and items, with **Go again** and **Return to map**.
+- No player health for now; the timer is the only limit.
+
+### Boss rooms (placeholder)
+Boss rooms will get their own design. For now: entering spends a key and the boss appears alone in the arena, with **no time limit** (can't be failed). If another key is held when it dies, the next boss steps in; otherwise the room is cleared and the results screen shows.
 
 ## Player Progression
 - **One combat level, 1 to 999.** Killing creatures gives XP.
@@ -41,15 +54,13 @@ Areas unlock by defeating the previous area's boss, not by level.
 | Ancient Foundry | Defeating Lich King | Constructs | 1 in 30 | **Colossus Construct** |
 | Dragon's Roost | Defeating Colossus Construct | Green Dragons | 1 in 30 | **Dragonia** (black dragon) |
 
-Tuning target: on the expected path (≈30 lesser kills per key + 1 boss), lesser creatures take ~5s to kill on arrival and bosses ~1.5–2 min. The expected path reaches about level 48 after Dragonia.
+Tuning target (set before arena runs; walking time now slows kills): on the expected path (≈30 lesser kills per key + 1 boss), lesser creatures take ~5s of attacking to kill on arrival and bosses ~1.5–2 min. The expected path reaches about level 48 after Dragonia.
 
 Level targets: farming rats until the key drops (~30 kills) should put the player at **level 3–4**; defeating the Rat Queen should reach **level 5**.
 
-### Keys and lairs
-- Lesser creatures can drop their area boss's key. Keys stack.
-- A key lets you into the boss's lair for **one kill**. The key is used when you enter.
-- **Boss fights can't be failed.** An under-levelled player just takes a long time to win.
-- After a boss dies, if the player holds another key for that area, it is used automatically and the next boss fight starts. With no keys left, the player returns to the lesser creatures.
+### Keys
+- Lesser creatures can drop their area boss's key during hunting runs. Keys stack.
+- A key lets you into the boss room for **one kill**. The key is used when you enter.
 - Bosses can be re-fought (with another key) for more loot rolls.
 
 ## Gear
@@ -141,10 +152,7 @@ This makes choosing which affix to keep, and which base to build on, the main de
 - Details TBD
 
 ## Offline Progress
-- On return, simulate fighting the currently selected creature for the time away
-- Award gold and XP; give a limited number of loot rolls
-- Cap at 8 hours (raise via upgrades later)
-- Show a "Welcome back!" popup with a summary
+- **Dropped:** with arena runs, nothing progresses outside a run (decided by the designer).
 
 ## Number Formatting
 - Under 1,000: show as-is (up to 2 decimals)
@@ -154,7 +162,7 @@ This makes choosing which affix to keep, and which base to build on, the main de
 ## Screens
 Gold and level/XP are shown in a top bar on every screen; screens are switched with a bottom tab bar.
 1. **Home:** picture of the player wearing their current gear, player stats, current activity
-2. **Hunt:** current creature, health bar, tap to attack, area tabs, keys and "Enter lair"
+2. **Hunt:** area map (Hunt / Boss room per area) → arena run (timer, tally, Move, End run) → results
 3. **Gear:** equipped slots (tap to remove) and the bag, with equip and sell buttons
 4. **Shop:** current stock, restock timer, refresh button
 5. **Collection:** collection log of monsters and their drops (see above)
@@ -171,10 +179,12 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 - [ ] **v0.2:** Levels 1–999 (RuneScape curve) boosting damage and attack speed; Sewers (Rats → Rat Queen); key drops and lairs; boss defeat unlocks Goblin Camp (Goblins → Goblin Lord)
 - [ ] **v0.3:** Gear (7 slots, % damage/speed bonuses, Rat Teeth Necklace double hit), loot tables, Home/Gear/Shop screens, selling, shop with boss-unlocked stock and hourly restock
 - [ ] **v0.3.1:** Collection log tab (monster silhouettes, kill tallies, per-monster drop counts, rarity colours incl. epic)
+- [ ] **v0.3.2:** Arena hunting runs: area map, auto-moving character, tap-area strikes, Move command, level-based time limit, results screen; placeholder boss rooms
+- [ ] **v0.3.3:** Boss room design (to be specified)
 - [ ] **v0.4:** Prefixes/suffixes on gear
 - [ ] **v0.5:** Forge: dismantle and mount
 - [ ] **v0.6:** Creature-family bonuses; more areas and bosses (Crypt, Foundry and Dragon's Roost added early)
-- [ ] **v0.7:** Offline progress
+- ~~**v0.7:** Offline progress~~ (dropped: nothing progresses outside a run)
 - [ ] **v0.8:** Polish: animations, sounds, settings
 - [ ] **v1.0:** Capacitor build, test on real devices, store release
 

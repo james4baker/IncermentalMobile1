@@ -1,5 +1,5 @@
 import { playerStats } from '../game/player';
-import { currentArea } from '../game/progression';
+import { areaById } from '../game/progression';
 import { EQUIP_SLOTS, type GameState } from '../game/state';
 import { AREAS } from '../data/areas';
 import { CREATURES } from '../data/creatures';
@@ -49,16 +49,19 @@ export function createHomeView(root: HTMLElement): HomeView {
       }
 
       const stats = playerStats(state);
-      const area = currentArea(state);
+      const run = state.run;
+      const area = run ? areaById(run.areaId) : undefined;
       statEls.damage.textContent = formatNumber(stats.damage);
       statEls.speed.textContent = `${stats.attacksPerSecond.toFixed(2)} / s`;
       statEls.double.textContent = formatPct(stats.doubleHitChance * 100);
       statEls.gear.textContent = `+${formatPct(stats.gear.damagePct)} dmg · +${formatPct(stats.gear.speedPct)} speed`;
       statEls.kills.textContent = formatNumber(state.kills);
       statEls.bosses.textContent = `${state.bossesDefeated.length} / ${AREAS.length}`;
-      statEls.activity.textContent = state.inLair
-        ? `Fighting the ${CREATURES[state.creatureId].name}`
-        : `Hunting ${CREATURES[state.creatureId].name}s in ${area.name}`;
+      statEls.activity.textContent = !run || !area || run.ended
+        ? 'Resting in town'
+        : run.kind === 'boss'
+          ? `Fighting the ${CREATURES[area.boss].name}`
+          : `Hunting in the ${area.name}`;
     },
   };
 }

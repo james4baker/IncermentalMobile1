@@ -16,6 +16,12 @@ export interface PlayerStats {
   gear: GearBonuses;
 }
 
+/** Seconds a hunting run lasts at this level. */
+export function runSeconds(level: number): number {
+  const R = CONFIG.run;
+  return Math.min(R.maxSeconds, R.baseSeconds + R.secondsPerLevel * (level - 1));
+}
+
 /** Level gives flat damage and base attack speed; gear multiplies both by its total %. */
 export function playerStats(state: GameState): PlayerStats {
   const level = levelForXp(state.xp);

@@ -1,8 +1,7 @@
 import './ui/styles.css';
 import { CONFIG } from './config';
-import { tap, tick } from './game/combat';
 import { equip, sell, sellAllOf, sellBag, unequip } from './game/items';
-import { enterLair, selectArea } from './game/progression';
+import { closeRun, commandMove, endRun, startRun, tapAt, tickRun } from './game/run';
 import { buy, refreshShop, updateShop } from './game/shop';
 import { loadGame, saveGame } from './save';
 import { createCollectionView } from './ui/collection';
@@ -22,13 +21,15 @@ updateShop(state, Date.now());
 const shell = createShell(root, 'home');
 const home = createHomeView(shell.screens.home);
 const hunt = createHuntView(shell.screens.hunt, {
-  tap: () => {
-    const events = tap(state);
+  start: (areaId, kind) => startRun(state, areaId, kind),
+  tap: (x, y) => {
+    const events = tapAt(state, x, y);
     hunt.showEvents(events);
     toastEvents(events);
   },
-  selectArea: (areaId) => selectArea(state, areaId),
-  enterLair: () => enterLair(state),
+  move: (x, y) => commandMove(state, x, y),
+  end: () => endRun(state, 'left'),
+  close: () => closeRun(state),
 });
 const gear = createGearView(shell.screens.gear, {
   equip: (uid, slot) => equip(state, uid, slot),
@@ -49,7 +50,8 @@ function frame(now: number): void {
   last = now;
   const wallClock = Date.now();
 
-  const events = tick(state, dt);
+  // The game only advances during a run.
+  const events = tickRun(state, dt);
   updateShop(state, wallClock);
   toastEvents(events);
 
@@ -60,7 +62,7 @@ function frame(now: number): void {
       break;
     case 'hunt':
       hunt.showEvents(events);
-      hunt.render(state);
+      hunt.render(state, dt);
       break;
     case 'gear':
       gear.render(state);

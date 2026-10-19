@@ -1,6 +1,5 @@
 import Decimal from 'break_infinity.js';
-import { CONFIG, type CreatureId, type ItemId } from '../config';
-import { AREAS } from '../data/areas';
+import type { CreatureId, ItemId } from '../config';
 
 export const EQUIP_SLOTS = ['head', 'chest', 'hands', 'legs', 'ring1', 'ring2', 'necklace'] as const;
 export type EquipSlot = (typeof EQUIP_SLOTS)[number];
@@ -16,16 +15,60 @@ export interface ShopOffer {
   sold: boolean;
 }
 
+export type RunKind = 'hunt' | 'boss';
+
+export interface Enemy {
+  id: number;
+  creatureId: CreatureId;
+  isBoss: boolean;
+  hp: Decimal;
+  maxHp: Decimal;
+  x: number;
+  y: number;
+  /** Wander direction in radians. */
+  heading: number;
+  /** Seconds until the next change of direction. */
+  wanderTimer: number;
+}
+
+/** Totals for the results screen. Rewards are applied to the game state as they happen. */
+export interface RunLoot {
+  gold: Decimal;
+  xp: Decimal;
+  kills: number;
+  items: ItemId[];
+  keys: number;
+  bossesDefeated: number;
+}
+
+/** One trip into an arena. Not saved: closing the app ends the run (loot is already kept). */
+export interface RunState {
+  kind: RunKind;
+  areaId: string;
+  /** Run length in seconds; null = no time limit (boss rooms, for now). */
+  duration: number | null;
+  elapsed: number;
+  startLevel: number;
+  player: {
+    x: number;
+    y: number;
+    /** Set by the Move command; the player walks here, then goes back to hunting. */
+    moveTarget: { x: number; y: number } | null;
+    targetId: number | null;
+    /** Seconds until the next auto-attack is ready. */
+    cooldown: number;
+  };
+  enemies: Enemy[];
+  nextEnemyId: number;
+  spawnTimer: number;
+  loot: RunLoot;
+  ended: boolean;
+  endReason: 'time' | 'left' | 'cleared' | null;
+}
+
 export interface GameState {
   gold: Decimal;
   xp: Decimal;
-  areaId: string;
-  creatureId: CreatureId;
-  creatureHp: Decimal;
-  /** True while fighting the current area's boss. */
-  inLair: boolean;
-  /** Seconds accumulated toward the next auto-attack. */
-  attackProgress: number;
   kills: number;
   /** Boss keys held, by area id. */
   keys: Record<string, number>;
@@ -40,6 +83,8 @@ export interface GameState {
   killCounts: Partial<Record<CreatureId, number>>;
   /** Collection log: how many of each item each creature has dropped. */
   drops: Partial<Record<CreatureId, Partial<Record<ItemId, number>>>>;
+  /** The current arena run, if any. */
+  run: RunState | null;
 }
 
 export function emptyEquipment(): Record<EquipSlot, ItemInstance | null> {
@@ -47,16 +92,9 @@ export function emptyEquipment(): Record<EquipSlot, ItemInstance | null> {
 }
 
 export function createInitialState(): GameState {
-  const area = AREAS[0]!;
-  const creatureId = area.creatures[0]!;
   return {
     gold: new Decimal(0),
     xp: new Decimal(0),
-    areaId: area.id,
-    creatureId,
-    creatureHp: new Decimal(CONFIG.creatures[creatureId].maxHp),
-    inLair: false,
-    attackProgress: 0,
     kills: 0,
     keys: {},
     bossesDefeated: [],
@@ -67,5 +105,6 @@ export function createInitialState(): GameState {
     shop: { offers: [], refreshedAt: 0 },
     killCounts: {},
     drops: {},
+    run: null,
   };
 }

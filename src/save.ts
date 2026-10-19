@@ -43,18 +43,19 @@ interface SaveDataV4 extends Omit<SaveDataV3, 'version'> {
   drops: Record<string, Record<string, number>>;
 }
 
-type AnySave = SaveDataV1 | SaveDataV2 | SaveDataV3 | SaveDataV4;
+/** v5: arena runs replace the always-on fight, so the current-creature fields are gone. Runs aren't saved. */
+interface SaveDataV5 extends Omit<SaveDataV4, 'version' | 'areaId' | 'creatureId' | 'creatureHp' | 'inLair'> {
+  version: 5;
+}
 
-function serialize(state: GameState): SaveDataV4 {
+type AnySave = SaveDataV1 | SaveDataV2 | SaveDataV3 | SaveDataV4 | SaveDataV5;
+
+function serialize(state: GameState): SaveDataV5 {
   return {
-    version: 4,
+    version: 5,
     savedAt: Date.now(),
     gold: state.gold.toString(),
     xp: state.xp.toString(),
-    areaId: state.areaId,
-    creatureId: state.creatureId,
-    creatureHp: state.creatureHp.toString(),
-    inLair: state.inLair,
     kills: state.kills,
     keys: { ...state.keys },
     bossesDefeated: [...state.bossesDefeated],
@@ -95,7 +96,7 @@ function estimateCollection(data: SaveDataV3): Pick<SaveDataV4, 'killCounts' | '
 }
 
 /** Upgrade older save formats to the current one. Add cases here as versions are added. */
-function migrate(data: AnySave): SaveDataV4 {
+function migrate(data: AnySave): SaveDataV5 {
   if (data.version === 1) {
     // v1 only had rats in the Sewers.
     data = { ...data, version: 2, areaId: 'sewers', inLair: false, keys: {}, bossesDefeated: [] };
@@ -105,6 +106,14 @@ function migrate(data: AnySave): SaveDataV4 {
   }
   if (data.version === 3) {
     data = { ...data, version: 4, ...estimateCollection(data) };
+  }
+  if (data.version === 4) {
+    // A boss fight in progress is lost with the old fight model, so refund its key.
+    const { areaId, creatureId, creatureHp: _hp, inLair, ...rest } = data;
+    const keys = { ...rest.keys };
+    const boss = AREAS.find((a) => a.id === areaId)?.boss;
+    if (inLair && boss === creatureId) keys[areaId] = (keys[areaId] ?? 0) + 1;
+    data = { ...rest, version: 5, keys };
   }
   return data;
 }
@@ -128,7 +137,7 @@ function isCreatureId(id: unknown): id is CreatureId {
   return typeof id === 'string' && id in CONFIG.creatures;
 }
 
-function deserialize(data: SaveDataV4): GameState {
+function deserialize(data: SaveDataV5): GameState {
   const state = createInitialState();
   state.gold = decimalOr(data.gold, state.gold);
   state.xp = decimalOr(data.xp, state.xp);
@@ -141,19 +150,6 @@ function deserialize(data: SaveDataV4): GameState {
     for (const [areaId, count] of Object.entries(data.keys)) {
       if (typeof count === 'number' && count > 0) state.keys[areaId] = Math.floor(count);
     }
-  }
-
-  // Restore position only if it is still valid for the area's data.
-  const area = AREAS.find((a) => a.id === data.areaId);
-  if (area) {
-    state.areaId = area.id;
-    const inLair = data.inLair === true && data.creatureId === area.boss;
-    const creatureId = inLair || area.creatures.includes(data.creatureId as CreatureId)
-      ? (data.creatureId as CreatureId)
-      : area.creatures[0]!;
-    state.inLair = inLair;
-    state.creatureId = creatureId;
-    state.creatureHp = decimalOr(data.creatureHp, new Decimal(CONFIG.creatures[creatureId].maxHp));
   }
 
   // Items: drop any whose definition no longer exists; keep uids unique.
