@@ -39,6 +39,9 @@ src/
 - After each change, briefly explain what changed and how to test it.
 - If something in the design doc is unclear or seems unbalanced, ask instead of guessing.
 - Update the roadmap checkboxes in `GAME_DESIGN.md` when a milestone is done.
+- **Commit and push to GitHub after each working code update** (`main` → `origin`, https://github.com/james4baker/IncermentalMobile1).
+  Only push once `npm run build` passes. Skip it for tiny tweaks still in progress, half-finished work, or when the user says to hold off.
+  Use a clear commit message describing what changed.
 
 ## Commands
 - `npm run dev`: start dev server
