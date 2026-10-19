@@ -50,6 +50,52 @@ const ITEMS = {
 
 export type ItemId = keyof typeof ITEMS;
 
+/** Every stat gear and affixes can boost. Percentages are in percent (5 = +5%); runSeconds is flat seconds. */
+export const STAT_KEYS = [
+  'damagePct',
+  'speedPct',
+  'doubleHitPct',
+  'goldPct',
+  'xpPct',
+  'runSeconds',
+  'tapDamagePct',
+  'tapRadiusPct',
+] as const;
+export type StatKey = (typeof STAT_KEYS)[number];
+
+/** Affix values per tier (index 0 = tier I ... 4 = tier V). An affix can boost several stats. */
+export type AffixBalance = Partial<Record<StatKey, readonly [number, number, number, number, number]>>;
+
+const AFFIXES = {
+  // Generic prefixes
+  vicious: { damagePct: [1, 2.5, 5, 9, 15] },
+  hasty: { speedPct: [1, 2, 4, 7, 12] },
+  gilded: { goldPct: [5, 10, 20, 35, 60] },
+  wise: { xpPct: [5, 10, 20, 35, 60] },
+  crushing: { tapDamagePct: [10, 25, 50, 90, 150] },
+  // Generic suffixes
+  ofMight: { damagePct: [1, 2.5, 5, 9, 15] },
+  ofSwiftness: { speedPct: [1, 2, 4, 7, 12] },
+  ofTwinStrikes: { doubleHitPct: [1, 2, 3, 5, 8] },
+  ofFortune: { goldPct: [5, 10, 20, 35, 60] },
+  ofLearning: { xpPct: [5, 10, 20, 35, 60] },
+  ofEndurance: { runSeconds: [2, 4, 7, 11, 16] },
+  ofReach: { tapRadiusPct: [5, 10, 15, 22, 30] },
+  // Boss-specific
+  verminous: { speedPct: [2, 4, 7, 11, 16], goldPct: [10, 20, 35, 55, 80] },
+  ofTheWarband: { damagePct: [2, 4, 7, 12, 18], tapDamagePct: [20, 40, 70, 110, 170] },
+  lichTouched: { xpPct: [10, 20, 35, 55, 80], runSeconds: [3, 6, 10, 15, 22] },
+  ofTheColossus: { damagePct: [3, 5, 9, 14, 22], tapRadiusPct: [8, 14, 20, 28, 38] },
+  dragonias: { damagePct: [4, 7, 12, 18, 28], speedPct: [3, 5, 9, 14, 20], doubleHitPct: [2, 3, 5, 7, 10] },
+  // Item-specific
+  gnawing: { damagePct: [3, 5, 9, 14, 20], doubleHitPct: [2, 4, 6, 9, 13] },
+  ofUndeath: { xpPct: [15, 30, 50, 75, 110], runSeconds: [4, 8, 13, 19, 27] },
+  titanic: { tapDamagePct: [30, 60, 100, 160, 250], tapRadiusPct: [10, 18, 26, 35, 45] },
+  ofTheBlackFlame: { damagePct: [5, 9, 15, 23, 35], doubleHitPct: [3, 5, 8, 11, 15] },
+} satisfies Record<string, AffixBalance>;
+
+export type AffixId = keyof typeof AFFIXES;
+
 export interface LootEntry {
   item: ItemId;
   /** Chance per kill (0..1). Each entry is rolled independently. */
@@ -172,6 +218,33 @@ export const CONFIG = {
   /** Item bonuses and values, keyed by item id from data/items.ts. */
   items: ITEMS,
 
+  /** Affix values per tier, keyed by affix id from data/affixes.ts. */
+  affixValues: AFFIXES,
+
+  affixes: {
+    /** Chance a dropped item rolls a prefix / a suffix (independent; shop items are always blank). */
+    prefixChance: 0.3,
+    suffixChance: 0.3,
+    /** When an affix rolls on an item that has its own specific affix for that slot, chance it's that one. */
+    itemAffixChance: 0.25,
+    /** When an affix rolls on a boss drop and the boss has a specific affix for that slot, chance it's that one. */
+    bossAffixChance: 0.2,
+    /** Base tier = area number (Sewers I ... Dragon's Roost V); then a chance to roll one higher or lower. */
+    tierUpChance: 0.25,
+    tierDownChance: 0.25,
+    /** Boss drops roll this many tiers higher. */
+    bossTierBonus: 1,
+    /** Each affix tier adds this fraction of the item's value (affects sell price). */
+    valuePerTier: 0.25,
+    mount: {
+      /** cost = base * tierMultiplier[tier] * (1 + sqrt(item value) / valueDivisor) * (filledMultiplier if the other slot is filled) */
+      base: 10,
+      tierMultipliers: [1, 3, 8, 20, 50],
+      valueDivisor: 5,
+      filledMultiplier: 2,
+    },
+  },
+
   shop: {
     /** Number of items on offer at once. */
     slots: 5,
@@ -220,7 +293,7 @@ export const CONFIG = {
 
   save: {
     key: 'incremental1.save',
-    version: 5,
+    version: 6,
     intervalMs: 5000,
   },
 } as const;

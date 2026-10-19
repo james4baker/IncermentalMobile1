@@ -1,10 +1,12 @@
 import './ui/styles.css';
 import { CONFIG } from './config';
-import { equip, sell, sellAllOf, sellBag, unequip } from './game/items';
+import { dismantle, mount } from './game/affixes';
+import { equip, sell, sellBag, sellGroup, unequip } from './game/items';
 import { closeRun, commandMove, endRun, startRun, tapAt, tickRun } from './game/run';
 import { buy, refreshShop, updateShop } from './game/shop';
 import { loadGame, saveGame } from './save';
 import { createCollectionView } from './ui/collection';
+import { createForgeView } from './ui/forge';
 import { createGearView } from './ui/gear';
 import { createHomeView } from './ui/home';
 import { createHuntView } from './ui/hunt';
@@ -35,12 +37,16 @@ const gear = createGearView(shell.screens.gear, {
   equip: (uid, slot) => equip(state, uid, slot),
   unequip: (slot) => unequip(state, slot),
   sell: (uid) => sell(state, uid),
-  sellAllOf: (itemId) => sellAllOf(state, itemId),
+  sellGroup: (key) => sellGroup(state, key),
   sellBag: () => sellBag(state),
 });
 const shop = createShopView(shell.screens.shop, {
   buy: (index) => buy(state, index),
   refresh: () => refreshShop(state, Date.now()),
+});
+const forge = createForgeView(shell.screens.forge, {
+  dismantle: (uid, keep) => dismantle(state, uid, keep),
+  mount: (index, uid) => mount(state, index, uid),
 });
 const collection = createCollectionView(shell.screens.log);
 
@@ -69,6 +75,9 @@ function frame(now: number): void {
       break;
     case 'shop':
       shop.render(state, wallClock);
+      break;
+    case 'forge':
+      forge.render(state);
       break;
     case 'log':
       collection.render(state);

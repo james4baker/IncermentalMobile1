@@ -61,7 +61,10 @@ body {
 
 .tab {
   flex: 1;
+  min-width: 0;
   min-height: 52px;
+  padding: 0 2px;
+  white-space: nowrap;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -72,7 +75,7 @@ body {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -774,4 +777,75 @@ body {
 
 .results-actions .btn {
   flex: 1;
+}
+
+/* Affixes and Forge */
+.item-affix {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.affix-generic {
+  color: #8ab4ff;
+}
+
+.affix-boss {
+  color: #c084fc;
+}
+
+.affix-item {
+  color: #ff9f43;
+}
+
+.log-orb.affixed {
+  box-shadow: 0 0 0 2px #8ab4ff;
+}
+
+.forge-hint {
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+
+.affix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.affix-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #3a3e4d;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.affix-card.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.affix-card-top {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+}
+
+.affix-card-top .item-name {
+  flex: 1;
+}
+
+.affix-slot,
+.affix-source {
+  font-size: 11px;
 }

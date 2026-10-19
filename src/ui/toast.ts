@@ -2,6 +2,7 @@ import type { GameEvent } from '../game/events';
 import { AREAS } from '../data/areas';
 import { CREATURES } from '../data/creatures';
 import { ITEMS } from '../data/items';
+import { itemName } from './itemText';
 
 let container: HTMLElement | null = null;
 
@@ -25,7 +26,7 @@ export function toastEvents(events: GameEvent[]): void {
   for (const ev of events) {
     switch (ev.type) {
       case 'loot':
-        for (const id of ev.itemIds) toast(`🎁 ${ITEMS[id].name}`, `rarity-${ITEMS[id].rarity}`);
+        for (const item of ev.items) toast(`🎁 ${itemName(item)}${item.prefix || item.suffix ? ' ✦' : ''}`, `rarity-${ITEMS[item.itemId].rarity}`);
         break;
       case 'firstKill':
         toast(`📖 New monster logged: ${CREATURES[ev.creatureId].name}`);

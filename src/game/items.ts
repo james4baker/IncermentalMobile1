@@ -1,18 +1,19 @@
 import Decimal from 'break_infinity.js';
-import { CONFIG, itemBalance, type ItemId } from '../config';
+import { CONFIG, type ItemId } from '../config';
 import { ITEMS, type ItemSlot } from '../data/items';
-import { EQUIP_SLOTS, type EquipSlot, type GameState, type ItemInstance } from './state';
+import { itemValue } from './affixes';
+import type { EquipSlot, GameState, ItemInstance } from './state';
 
-export interface GearBonuses {
-  damagePct: number;
-  speedPct: number;
-  doubleHitPct: number;
-}
-
-export function addItem(state: GameState, itemId: ItemId): ItemInstance {
-  const item = { uid: state.nextItemUid++, itemId };
+export function addItem(state: GameState, itemId: ItemId, affixes: Pick<ItemInstance, 'prefix' | 'suffix'> = {}): ItemInstance {
+  const item: ItemInstance = { uid: state.nextItemUid++, itemId, ...affixes };
   state.inventory.push(item);
   return item;
+}
+
+/** Items with the same base and the same affixes are interchangeable, so the bag groups them. */
+export function groupKey(item: ItemInstance): string {
+  const a = (r: ItemInstance['prefix']) => (r ? `${r.affixId}:${r.tier}` : '-');
+  return `${item.itemId}|${a(item.prefix)}|${a(item.suffix)}`;
 }
 
 /** Which equipment slots an item of this type can go in. */
@@ -45,8 +46,8 @@ export function unequip(state: GameState, slot: EquipSlot): boolean {
   return true;
 }
 
-export function sellPrice(itemId: ItemId): Decimal {
-  return new Decimal(Math.floor(itemBalance(itemId).value * CONFIG.shop.sellFraction));
+export function sellPrice(item: ItemInstance): Decimal {
+  return new Decimal(Math.floor(itemValue(item) * CONFIG.shop.sellFraction));
 }
 
 /** Sell every unequipped item matching the predicate. Returns gold gained. */
@@ -54,7 +55,7 @@ function sellWhere(state: GameState, pred: (item: ItemInstance) => boolean): Dec
   let gained = new Decimal(0);
   state.inventory = state.inventory.filter((item) => {
     if (!pred(item)) return true;
-    gained = gained.add(sellPrice(item.itemId));
+    gained = gained.add(sellPrice(item));
     return false;
   });
   state.gold = state.gold.add(gained);
@@ -68,9 +69,9 @@ export function sell(state: GameState, uid: number): boolean {
   return state.inventory.length < before;
 }
 
-/** Sell every unequipped copy of an item. */
-export function sellAllOf(state: GameState, itemId: ItemId): Decimal {
-  return sellWhere(state, (i) => i.itemId === itemId);
+/** Sell every unequipped item in a group (same base and affixes). */
+export function sellGroup(state: GameState, key: string): Decimal {
+  return sellWhere(state, (i) => groupKey(i) === key);
 }
 
 /** Sell everything in the bag (equipped items are kept). */
@@ -80,18 +81,5 @@ export function sellBag(state: GameState): Decimal {
 
 /** Gold the whole bag would sell for. */
 export function bagValue(state: GameState): Decimal {
-  return state.inventory.reduce((sum, i) => sum.add(sellPrice(i.itemId)), new Decimal(0));
-}
-
-export function gearBonuses(state: GameState): GearBonuses {
-  const total: GearBonuses = { damagePct: 0, speedPct: 0, doubleHitPct: 0 };
-  for (const slot of EQUIP_SLOTS) {
-    const item = state.equipment[slot];
-    if (!item) continue;
-    const b = itemBalance(item.itemId);
-    total.damagePct += b.damagePct;
-    total.speedPct += b.speedPct;
-    total.doubleHitPct += b.doubleHitPct ?? 0;
-  }
-  return total;
+  return state.inventory.reduce((sum, i) => sum.add(sellPrice(i)), new Decimal(0));
 }

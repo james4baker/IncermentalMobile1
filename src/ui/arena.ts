@@ -18,6 +18,8 @@ interface Floater {
 }
 interface Effect {
   kind: 'ring' | 'swing';
+  /** Ring radius (tap strikes). */
+  radius: number;
   x: number;
   y: number;
   toX: number;
@@ -106,10 +108,10 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
             floaters.push({ text: `+${formatNumber(ev.gold)}g`, color: '#f2c14e', size: 4, x: ev.x, y: ev.y - 7, age: 0 });
             break;
           case 'tap':
-            effects.push({ kind: 'ring', x: ev.x, y: ev.y, toX: 0, toY: 0, age: 0 });
+            effects.push({ kind: 'ring', radius: ev.radius, x: ev.x, y: ev.y, toX: 0, toY: 0, age: 0 });
             break;
           case 'swing':
-            effects.push({ kind: 'swing', x: ev.fromX, y: ev.fromY, toX: ev.toX, toY: ev.toY, age: 0 });
+            effects.push({ kind: 'swing', radius: 0, x: ev.fromX, y: ev.fromY, toX: ev.toX, toY: ev.toY, age: 0 });
             break;
         }
       }
@@ -177,7 +179,7 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
           ctx.strokeStyle = `rgba(255,138,101,${1 - t})`;
           ctx.lineWidth = 0.8;
           ctx.beginPath();
-          ctx.arc(fx.x, fx.y, A.tapRadius * (0.4 + 0.6 * t), 0, Math.PI * 2);
+          ctx.arc(fx.x, fx.y, fx.radius * (0.4 + 0.6 * t), 0, Math.PI * 2);
           ctx.stroke();
         } else {
           ctx.strokeStyle = `rgba(255,255,255,${0.8 - fx.age / 0.15 * 0.8})`;

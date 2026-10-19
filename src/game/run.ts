@@ -1,11 +1,12 @@
 import Decimal from 'break_infinity.js';
 import { CONFIG, type CreatureId } from '../config';
+import { rollAffixes } from './affixes';
 import { killCount, recordKill } from './collection';
 import type { GameEvent } from './events';
 import { addItem } from './items';
 import { levelForXp } from './levels';
 import { rollLoot } from './loot';
-import { playerStats, runSeconds } from './player';
+import { playerStats, runDuration } from './player';
 import { areaById, isAreaUnlocked, keysHeld, nextArea, spendKey } from './progression';
 import type { Enemy, GameState, RunKind, RunState } from './state';
 
@@ -66,7 +67,7 @@ export function startRun(state: GameState, areaId: string, kind: RunKind, rng: (
   const run: RunState = {
     kind,
     areaId,
-    duration: kind === 'hunt' ? runSeconds(level) : null,
+    duration: kind === 'hunt' ? runDuration(state) : null,
     elapsed: 0,
     startLevel: level,
     player: { x: A.width / 2, y: A.height / 2, moveTarget: null, targetId: null, cooldown: 0 },
@@ -112,13 +113,21 @@ export function commandMove(state: GameState, x: number, y: number): void {
   };
 }
 
+/** Apply a % bonus to a whole-number reward, rounding the fraction up by chance so small bonuses still count. */
+function scaledReward(base: number, multiplier: number, rng: () => number): Decimal {
+  const raw = base * multiplier;
+  const whole = Math.floor(raw);
+  return new Decimal(whole + (rng() < raw - whole ? 1 : 0));
+}
+
 function onKill(state: GameState, run: RunState, enemy: Enemy, events: GameEvent[], rng: () => number): void {
   const reward = CONFIG.creatures[enemy.creatureId];
   const area = areaById(run.areaId)!;
   const levelBefore = levelForXp(state.xp);
 
-  const gold = new Decimal(reward.gold);
-  const xp = new Decimal(reward.xp);
+  const stats = playerStats(state);
+  const gold = scaledReward(reward.gold, stats.goldMultiplier, rng);
+  const xp = scaledReward(reward.xp, stats.xpMultiplier, rng);
   state.gold = state.gold.add(gold);
   state.xp = state.xp.add(xp);
   state.kills += 1;
@@ -130,9 +139,9 @@ function onKill(state: GameState, run: RunState, enemy: Enemy, events: GameEvent
   events.push({ type: 'kill', creatureId: enemy.creatureId, gold, xp, x: enemy.x, y: enemy.y });
 
   const drops = rollLoot(enemy.creatureId, rng);
-  for (const itemId of drops) addItem(state, itemId);
-  run.loot.items.push(...drops);
-  if (drops.length > 0) events.push({ type: 'loot', itemIds: drops });
+  const dropped = drops.map((itemId) => addItem(state, itemId, rollAffixes(itemId, enemy.creatureId, rng)));
+  run.loot.items.push(...dropped.map((i) => ({ ...i })));
+  if (dropped.length > 0) events.push({ type: 'loot', items: dropped });
 
   const newEntries = recordKill(state, enemy.creatureId, drops);
   if (killCount(state, enemy.creatureId) === 1) events.push({ type: 'firstKill', creatureId: enemy.creatureId });
@@ -189,9 +198,10 @@ function attack(state: GameState, run: RunState, enemy: Enemy, amount: Decimal, 
 export function tapAt(state: GameState, x: number, y: number, rng: () => number = Math.random): GameEvent[] {
   const run = state.run;
   if (!run || run.ended) return [];
-  const events: GameEvent[] = [{ type: 'tap', x, y }];
-  const amount = playerStats(state).tapDamage;
-  const targets = run.enemies.filter((e) => dist(e.x, e.y, x, y) <= A.tapRadius + (e.isBoss ? A.bossRadius : A.enemyRadius));
+  const stats = playerStats(state);
+  const events: GameEvent[] = [{ type: 'tap', x, y, radius: stats.tapRadius }];
+  const amount = stats.tapDamage;
+  const targets = run.enemies.filter((e) => dist(e.x, e.y, x, y) <= stats.tapRadius + (e.isBoss ? A.bossRadius : A.enemyRadius));
   for (const enemy of targets) {
     if (run.ended) break;
     attack(state, run, enemy, amount, 'tap', events, rng);

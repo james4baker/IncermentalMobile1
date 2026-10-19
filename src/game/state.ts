@@ -1,13 +1,21 @@
 import Decimal from 'break_infinity.js';
-import type { CreatureId, ItemId } from '../config';
+import type { AffixId, CreatureId, ItemId } from '../config';
 
 export const EQUIP_SLOTS = ['head', 'chest', 'hands', 'legs', 'ring1', 'ring2', 'necklace'] as const;
 export type EquipSlot = (typeof EQUIP_SLOTS)[number];
 
-/** One owned item. uid keeps identical items distinct (affixes will make them differ later). */
+/** An affix with its rolled tier (1-5). */
+export interface AffixRoll {
+  affixId: AffixId;
+  tier: number;
+}
+
+/** One owned item. Either affix slot may be empty. */
 export interface ItemInstance {
   uid: number;
   itemId: ItemId;
+  prefix?: AffixRoll;
+  suffix?: AffixRoll;
 }
 
 export interface ShopOffer {
@@ -36,7 +44,7 @@ export interface RunLoot {
   gold: Decimal;
   xp: Decimal;
   kills: number;
-  items: ItemId[];
+  items: ItemInstance[];
   keys: number;
   bossesDefeated: number;
 }
@@ -83,6 +91,8 @@ export interface GameState {
   killCounts: Partial<Record<CreatureId, number>>;
   /** Collection log: how many of each item each creature has dropped. */
   drops: Partial<Record<CreatureId, Partial<Record<ItemId, number>>>>;
+  /** Affixes extracted by dismantling, waiting to be mounted. */
+  affixStash: AffixRoll[];
   /** The current arena run, if any. */
   run: RunState | null;
 }
@@ -105,6 +115,7 @@ export function createInitialState(): GameState {
     shop: { offers: [], refreshedAt: 0 },
     killCounts: {},
     drops: {},
+    affixStash: [],
     run: null,
   };
 }

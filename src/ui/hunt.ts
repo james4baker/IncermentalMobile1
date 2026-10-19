@@ -1,16 +1,16 @@
-import type { ItemId } from '../config';
 import { AREAS } from '../data/areas';
 import { CREATURES } from '../data/creatures';
 import { ITEMS } from '../data/items';
 import type { GameEvent } from '../game/events';
 import { levelForXp } from '../game/levels';
-import { runSeconds } from '../game/player';
+import { groupKey } from '../game/items';
+import { runDuration } from '../game/player';
 import { areaById, isAreaUnlocked, keysHeld, previousArea } from '../game/progression';
 import { canStartRun, timeLeft } from '../game/run';
-import type { GameState, RunKind, RunState } from '../game/state';
+import type { GameState, ItemInstance, RunKind, RunState } from '../game/state';
 import { createArenaRenderer } from './arena';
 import { formatNumber } from './format';
-import { escapeHtml } from './itemText';
+import { escapeHtml, itemName } from './itemText';
 
 export interface HuntView {
   render(state: GameState, dt: number): void;
@@ -108,7 +108,7 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
   });
 
   function renderMap(state: GameState): void {
-    runLengthEl.textContent = `Runs last ${runSeconds(levelForXp(state.xp))}s at your level. Level up for longer runs.`;
+    runLengthEl.textContent = `Runs last ${Math.round(runDuration(state))}s. Level up (or find run-time affixes) for longer runs.`;
     for (const c of cards) {
       const unlocked = isAreaUnlocked(state, c.area.id);
       const keys = keysHeld(state, c.area.id);
@@ -184,19 +184,25 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
     const title =
       run.endReason === 'time' ? "Time's up!" : run.endReason === 'cleared' ? 'Boss room cleared!' : 'Run ended';
     const levelNow = levelForXp(state.xp);
-    const counts = new Map<ItemId, number>();
-    for (const id of l.items) counts.set(id, (counts.get(id) ?? 0) + 1);
-    const items = [...counts.entries()]
-      .map(
-        ([id, n]) => `
+    const groups = new Map<string, { item: ItemInstance; n: number }>();
+    for (const item of l.items) {
+      const g = groups.get(groupKey(item));
+      if (g) g.n++;
+      else groups.set(groupKey(item), { item, n: 1 });
+    }
+    const items = [...groups.values()]
+      .map(({ item, n }) => {
+        const def = ITEMS[item.itemId];
+        const affixed = item.prefix || item.suffix;
+        return `
         <div class="log-item">
-          <div class="log-orb rarity-bg-${ITEMS[id].rarity}">
-            <span class="log-item-icon">${ITEMS[id].icon}</span>
+          <div class="log-orb rarity-bg-${def.rarity} ${affixed ? 'affixed' : ''}">
+            <span class="log-item-icon">${def.icon}</span>
             ${n > 1 ? `<span class="log-badge">${n}</span>` : ''}
           </div>
-          <span class="log-item-name">${escapeHtml(ITEMS[id].name)}</span>
-        </div>`,
-      )
+          <span class="log-item-name">${escapeHtml(itemName(item))}${affixed ? ' ✦' : ''}</span>
+        </div>`;
+      })
       .join('');
     const canAgain = canStartRun(state, run.areaId, run.kind);
     return `

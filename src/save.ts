@@ -1,9 +1,10 @@
 import Decimal from 'break_infinity.js';
-import { CONFIG, type CreatureId, type ItemId } from './config';
+import { CONFIG, type AffixId, type CreatureId, type ItemId } from './config';
+import { AFFIXES } from './data/affixes';
 import { AREAS } from './data/areas';
 import { ITEMS } from './data/items';
 import { slotsFor } from './game/items';
-import { createInitialState, EQUIP_SLOTS, type GameState, type ItemInstance } from './game/state';
+import { createInitialState, EQUIP_SLOTS, type AffixRoll, type GameState, type ItemInstance } from './game/state';
 
 /** On-disk formats. Decimals are stored as strings. Bump CONFIG.save.version and add a migration when this changes. */
 interface SaveDataV1 {
@@ -24,9 +25,17 @@ interface SaveDataV2 extends Omit<SaveDataV1, 'version'> {
   bossesDefeated: string[];
 }
 
+interface SavedAffix {
+  affixId: string;
+  tier: number;
+}
+
 interface SavedItem {
   uid: number;
   itemId: string;
+  /** v6+ */
+  prefix?: SavedAffix;
+  suffix?: SavedAffix;
 }
 
 interface SaveDataV3 extends Omit<SaveDataV2, 'version'> {
@@ -48,11 +57,17 @@ interface SaveDataV5 extends Omit<SaveDataV4, 'version' | 'areaId' | 'creatureId
   version: 5;
 }
 
-type AnySave = SaveDataV1 | SaveDataV2 | SaveDataV3 | SaveDataV4 | SaveDataV5;
+/** v6: affixes on items, and the stash of extracted affixes. */
+interface SaveDataV6 extends Omit<SaveDataV5, 'version'> {
+  version: 6;
+  affixStash: SavedAffix[];
+}
 
-function serialize(state: GameState): SaveDataV5 {
+type AnySave = SaveDataV1 | SaveDataV2 | SaveDataV3 | SaveDataV4 | SaveDataV5 | SaveDataV6;
+
+function serialize(state: GameState): SaveDataV6 {
   return {
-    version: 5,
+    version: 6,
     savedAt: Date.now(),
     gold: state.gold.toString(),
     xp: state.xp.toString(),
@@ -65,6 +80,7 @@ function serialize(state: GameState): SaveDataV5 {
     shop: { offers: state.shop.offers.map((o) => ({ ...o })), refreshedAt: state.shop.refreshedAt },
     killCounts: { ...state.killCounts },
     drops: Object.fromEntries(Object.entries(state.drops).map(([c, items]) => [c, { ...items }])),
+    affixStash: state.affixStash.map((a) => ({ ...a })),
   };
 }
 
@@ -96,7 +112,7 @@ function estimateCollection(data: SaveDataV3): Pick<SaveDataV4, 'killCounts' | '
 }
 
 /** Upgrade older save formats to the current one. Add cases here as versions are added. */
-function migrate(data: AnySave): SaveDataV5 {
+function migrate(data: AnySave): SaveDataV6 {
   if (data.version === 1) {
     // v1 only had rats in the Sewers.
     data = { ...data, version: 2, areaId: 'sewers', inLair: false, keys: {}, bossesDefeated: [] };
@@ -115,6 +131,9 @@ function migrate(data: AnySave): SaveDataV5 {
     if (inLair && boss === creatureId) keys[areaId] = (keys[areaId] ?? 0) + 1;
     data = { ...rest, version: 5, keys };
   }
+  if (data.version === 5) {
+    data = { ...data, version: 6, affixStash: [] };
+  }
   return data;
 }
 
@@ -128,16 +147,30 @@ function isItemId(id: unknown): id is ItemId {
   return typeof id === 'string' && id in ITEMS;
 }
 
+/** Validate a saved affix; affixes in the wrong slot or no longer defined are dropped. */
+function toAffix(saved: SavedAffix | undefined, slot?: 'prefix' | 'suffix'): AffixRoll | undefined {
+  if (!saved || typeof saved.affixId !== 'string' || !(saved.affixId in AFFIXES)) return undefined;
+  const affixId = saved.affixId as AffixId;
+  if (slot && AFFIXES[affixId].slot !== slot) return undefined;
+  const tier = Math.min(5, Math.max(1, Math.floor(Number(saved.tier) || 1)));
+  return { affixId, tier };
+}
+
 function toItem(saved: SavedItem | null | undefined): ItemInstance | null {
   if (!saved || typeof saved.uid !== 'number' || !isItemId(saved.itemId)) return null;
-  return { uid: saved.uid, itemId: saved.itemId };
+  const item: ItemInstance = { uid: saved.uid, itemId: saved.itemId };
+  const prefix = toAffix(saved.prefix, 'prefix');
+  const suffix = toAffix(saved.suffix, 'suffix');
+  if (prefix) item.prefix = prefix;
+  if (suffix) item.suffix = suffix;
+  return item;
 }
 
 function isCreatureId(id: unknown): id is CreatureId {
   return typeof id === 'string' && id in CONFIG.creatures;
 }
 
-function deserialize(data: SaveDataV5): GameState {
+function deserialize(data: SaveDataV6): GameState {
   const state = createInitialState();
   state.gold = decimalOr(data.gold, state.gold);
   state.xp = decimalOr(data.xp, state.xp);
@@ -184,6 +217,12 @@ function deserialize(data: SaveDataV5): GameState {
     if (!isCreatureId(c) || !items || typeof items !== 'object') continue;
     for (const [id, n] of Object.entries(items)) {
       if (isItemId(id) && typeof n === 'number' && n > 0) (state.drops[c] ??= {})[id] = Math.floor(n);
+    }
+  }
+  if (Array.isArray(data.affixStash)) {
+    for (const saved of data.affixStash) {
+      const roll = toAffix(saved);
+      if (roll) state.affixStash.push(roll);
     }
   }
   return state;

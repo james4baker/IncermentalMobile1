@@ -1,9 +1,9 @@
-import { itemBalance, type ItemId } from '../config';
 import { ITEMS } from '../data/items';
-import { bagValue, sellPrice, slotsFor } from '../game/items';
+import { itemStats, itemValue } from '../game/affixes';
+import { bagValue, groupKey, sellPrice, slotsFor } from '../game/items';
 import { EQUIP_SLOTS, type EquipSlot, type GameState, type ItemInstance } from '../game/state';
 import { formatNumber } from './format';
-import { itemLabelHtml, SLOT_LABELS } from './itemText';
+import { escapeHtml, itemLabelHtml, itemName, SLOT_LABELS } from './itemText';
 
 export interface GearView {
   render(state: GameState): void;
@@ -13,14 +13,14 @@ export interface GearActions {
   equip(uid: number, slot: EquipSlot): void;
   unequip(slot: EquipSlot): void;
   sell(uid: number): void;
-  sellAllOf(itemId: ItemId): void;
+  sellGroup(key: string): void;
   sellBag(): void;
 }
 
 const SORTS = [
-  { id: 'damage', label: 'Damage', value: (id: ItemId) => itemBalance(id).damagePct },
-  { id: 'speed', label: 'Speed', value: (id: ItemId) => itemBalance(id).speedPct },
-  { id: 'value', label: 'Value', value: (id: ItemId) => itemBalance(id).value },
+  { id: 'damage', label: 'Damage', value: (i: ItemInstance) => itemStats(i).damagePct },
+  { id: 'speed', label: 'Speed', value: (i: ItemInstance) => itemStats(i).speedPct },
+  { id: 'value', label: 'Value', value: (i: ItemInstance) => itemValue(i) },
 ] as const;
 type SortId = (typeof SORTS)[number]['id'];
 
@@ -68,7 +68,7 @@ export function createGearView(root: HTMLElement, actions: GearActions): GearVie
         actions.sell(uid);
         break;
       case 'sellall':
-        actions.sellAllOf(btn.dataset.item as ItemId);
+        actions.sellGroup(btn.dataset.group!);
         break;
     }
   });
@@ -99,7 +99,7 @@ export function createGearView(root: HTMLElement, actions: GearActions): GearVie
       return `
         <button type="button" class="slot" data-action="unequip" data-slot="${slot}">
           <span class="slot-label">${SLOT_LABELS[slot]} · tap to remove</span>
-          <span class="item-row">${itemLabelHtml(item.itemId)}</span>
+          <span class="item-row">${itemLabelHtml(item)}</span>
         </button>`;
     }).join('');
   }
@@ -108,22 +108,23 @@ export function createGearView(root: HTMLElement, actions: GearActions): GearVie
     if (state.inventory.length === 0) {
       return `<p class="empty">No spare gear. Hunt creatures for drops or visit the shop.</p>`;
     }
-    // Identical items are grouped; single actions apply to the first one in the group.
-    const groups = new Map<ItemId, ItemInstance[]>();
+    // Identical items (same base and affixes) are grouped; single actions apply to the first one.
+    const groups = new Map<string, ItemInstance[]>();
     for (const item of state.inventory) {
-      const list = groups.get(item.itemId) ?? [];
+      const key = groupKey(item);
+      const list = groups.get(key) ?? [];
       list.push(item);
-      groups.set(item.itemId, list);
+      groups.set(key, list);
     }
     // Explicit order (highest first, then name) so groups don't jump around as items come and go.
     const sortValue = SORTS.find((s) => s.id === sort)!.value;
     const ordered = [...groups.entries()].sort(
-      ([a], [b]) => sortValue(b) - sortValue(a) || ITEMS[a].name.localeCompare(ITEMS[b].name),
+      ([, a], [, b]) => sortValue(b[0]!) - sortValue(a[0]!) || itemName(a[0]!).localeCompare(itemName(b[0]!)),
     );
 
-    return ordered.map(([itemId, items]) => {
+    return ordered.map(([key, items]) => {
       const first = items[0]!;
-      const slots = slotsFor(ITEMS[itemId].slot);
+      const slots = slotsFor(ITEMS[first.itemId].slot);
       const equipButtons = slots
         .map((slot) => {
           const label = slots.length > 1 ? `Equip ${SLOT_LABELS[slot]}` : 'Equip';
@@ -131,14 +132,14 @@ export function createGearView(root: HTMLElement, actions: GearActions): GearVie
         })
         .join('');
       const sellAll = items.length > 1
-        ? `<button type="button" class="btn btn-secondary" data-action="sellall" data-item="${itemId}">Sell all ×${items.length} · ${formatNumber(sellPrice(itemId).mul(items.length))}g</button>`
+        ? `<button type="button" class="btn btn-secondary" data-action="sellall" data-group="${escapeHtml(key)}">Sell all ×${items.length} · ${formatNumber(sellPrice(first).mul(items.length))}g</button>`
         : '';
       return `
         <div class="item-card">
-          <div class="item-row">${itemLabelHtml(itemId)}${items.length > 1 ? `<span class="item-count">×${items.length}</span>` : ''}</div>
+          <div class="item-row">${itemLabelHtml(first)}${items.length > 1 ? `<span class="item-count">×${items.length}</span>` : ''}</div>
           <div class="item-actions">
             ${equipButtons}
-            <button type="button" class="btn btn-secondary" data-action="sell" data-uid="${first.uid}">Sell · ${formatNumber(sellPrice(itemId))}g</button>
+            <button type="button" class="btn btn-secondary" data-action="sell" data-uid="${first.uid}">Sell · ${formatNumber(sellPrice(first))}g</button>
             ${sellAll}
           </div>
         </div>`;
@@ -155,7 +156,11 @@ export function createGearView(root: HTMLElement, actions: GearActions): GearVie
         : `Sell all · ${formatNumber(bagValue(state))}g`;
 
       const key =
-        sort + '|' + EQUIP_SLOTS.map((s) => state.equipment[s]?.uid ?? 0).join(',') + '|' + state.inventory.map((i) => i.uid).join(',');
+        sort +
+        '|' +
+        EQUIP_SLOTS.map((s) => { const i = state.equipment[s]; return i ? i.uid + groupKey(i) : '0'; }).join(',') +
+        '|' +
+        state.inventory.map((i) => i.uid + groupKey(i)).join(',');
       if (key === renderedKey) return;
       renderedKey = key;
       for (const b of sortBtns) b.classList.toggle('active', b.dataset.sort === sort);

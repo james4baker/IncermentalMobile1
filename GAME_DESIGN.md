@@ -113,36 +113,58 @@ A tab listing every monster, grouped by area, to give a sense of achievement.
 Gear from a creature family is strong against that family (rat weapons deal extra damage to rats). This pushes players to farm the right gear for each area.
 
 ## Items and Affixes
-Every weapon or armour piece can have:
+Every gear item can have:
 - **Base item:** the item type and its base stats
 - **Prefix (optional):** one modifier, shown before the name
 - **Suffix (optional):** one modifier, shown after the name
 
-Example: **Vicious** Rat Fang Dagger **of Swiftness**
+An item can have neither, one or both. Example: **Vicious** Torn Leather Cap **of Swiftness**
 
-### Example affixes (damage-focused)
-| Affix | Slot | Effect |
-|---|---|---|
-| Sharp | Prefix | +X flat damage |
-| Vicious | Prefix | +X% damage |
-| Brutal | Prefix | +X% critical damage |
-| of Swiftness | Suffix | +X% attack speed |
-| of Precision | Suffix | +X% critical chance |
-| of the Ratcatcher | Suffix | +X% damage vs rats |
+### Rolling
+- Only **monster drops** roll affixes; shop items are always blank (cheap bases for mounting).
+- Each drop rolls the prefix and suffix independently (`affixes.prefixChance` / `suffixChance`, 30% each → ~49% blank, ~9% both).
+- **Tiers I–V:** base tier = area number (Sewers I … Dragon's Roost V), boss drops +1, then a chance to roll one higher or lower.
+- Three kinds of affix, from common to rare:
+  - **Generic** (blue): can roll on any drop.
+  - **Boss-specific** (purple): can only roll on items dropped by that boss (`affixes.bossAffixChance`).
+  - **Item-specific** (orange): can only roll on one particular item, e.g. the Rat Teeth Necklace (`affixes.itemAffixChance`). Needs both the item drop and the affix roll.
+- Affix definitions are in `data/affixes.ts`; values per tier in `config.ts` (`affixValues`).
 
-Affixes can roll in tiers (e.g. Sharp I–V) so the same affix can be better or worse.
+### Stats affixes can boost
+Damage %, attack speed %, double hit %, gold find %, XP find %, run time (+seconds), tap damage %, tap radius %.
 
-## Crafting: Dismantle and Mount
-1. **Dismantle** an item: choose to extract **either** its prefix **or** its suffix. The item is destroyed and the other affix is lost.
-2. Extracted affixes go into an **affix inventory**.
-3. **Mount** an affix onto another weapon by paying gold.
-   - A prefix fills the prefix slot, a suffix fills the suffix slot.
-   - Mounting onto a slot that's already filled replaces the old affix.
+| Affix | Slot | Source | Boosts |
+|---|---|---|---|
+| Vicious / of Might | Prefix / Suffix | Generic | Damage |
+| Hasty / of Swiftness | Prefix / Suffix | Generic | Attack speed |
+| of Twin Strikes | Suffix | Generic | Double hit |
+| Gilded / of Fortune | Prefix / Suffix | Generic | Gold find |
+| Wise / of Learning | Prefix / Suffix | Generic | XP find |
+| of Endurance | Suffix | Generic | Run time |
+| Crushing / of Reach | Prefix / Suffix | Generic | Tap damage / tap radius |
+| Verminous | Prefix | Rat Queen | Speed + gold |
+| of the Warband | Suffix | Goblin Lord | Damage + tap damage |
+| Lich-touched | Prefix | Lich King | XP + run time |
+| of the Colossus | Suffix | Colossus Construct | Damage + tap radius |
+| Dragonia's | Prefix | Dragonia | Damage + speed + double hit |
+| Gnawing | Prefix | Rat Teeth Necklace | Damage + double hit |
+| of Undeath | Suffix | Lich's Phylactery | XP + run time |
+| Titanic | Prefix | Heart of the Colossus | Tap damage + tap radius |
+| of the Black Flame | Suffix | Eye of Dragonia | Damage + double hit |
+
+Affixes add to an item's value (`affixes.valuePerTier` per tier), which raises its sell price.
+
+## Crafting: the Forge
+1. **Dismantle** a bag item: choose to keep **either** its prefix **or** its suffix (two taps to confirm). The item is destroyed and the other affix is lost.
+2. Kept affixes go into the **affix stash** (tracked and saved), grouped by affix and tier.
+3. **Mount** a stashed affix onto any item, bag or equipped, by paying gold.
+   - Any affix can go on any item; a prefix fills the prefix slot, a suffix the suffix slot.
+   - Mounting onto a filled slot replaces (destroys) the old affix (two taps to confirm).
 
 ### Mounting cost
-- **Blank weapon (no affixes):** cheapest
-- **Weapon with one affix already:** more expensive
-- Cost also scales with affix tier and item level
+`base × tierMultiplier[tier] × (1 + √(item value) / valueDivisor) × (2 if the item's other slot is filled)` — numbers in `config.ts` (`affixes.mount`).
+- Blank item: cheapest; item that already has the other affix: double.
+- Scales with affix tier and the item's value (better bases cost more).
 
 This makes choosing which affix to keep, and which base to build on, the main decision of the game.
 
@@ -166,7 +188,7 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 3. **Gear:** equipped slots (tap to remove) and the bag, with equip and sell buttons
 4. **Shop:** current stock, restock timer, refresh button
 5. **Collection:** collection log of monsters and their drops (see above)
-6. **Forge (later):** dismantle items, affix inventory, mount affixes (shows cost)
+6. **Forge:** Dismantle (keep prefix or suffix) and Mount (stash → item, shows cost)
 7. **Settings (later):** sound, number notation, export/import save, reset
 
 ## Monetisation (later, optional)
@@ -181,8 +203,8 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 - [ ] **v0.3.1:** Collection log tab (monster silhouettes, kill tallies, per-monster drop counts, rarity colours incl. epic)
 - [ ] **v0.3.2:** Arena hunting runs: area map, auto-moving character, tap-area strikes, Move command, level-based time limit, results screen; placeholder boss rooms
 - [ ] **v0.3.3:** Boss room design (to be specified)
-- [ ] **v0.4:** Prefixes/suffixes on gear
-- [ ] **v0.5:** Forge: dismantle and mount
+- [ ] **v0.4:** Prefixes/suffixes on gear (generic, boss-specific, item-specific; tiers I–V; 8 stats)
+- [ ] **v0.5:** Forge: dismantle into the affix stash and mount for gold
 - [ ] **v0.6:** Creature-family bonuses; more areas and bosses (Crypt, Foundry and Dragon's Roost added early)
 - ~~**v0.7:** Offline progress~~ (dropped: nothing progresses outside a run)
 - [ ] **v0.8:** Polish: animations, sounds, settings
@@ -191,8 +213,8 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 ## Open Questions
 - ~~Is combat fully automatic, tap-based, or both?~~ Both.
 - ~~Are bosses limited (cooldown, keys) or freely farmable?~~ Key-gated, one kill per key, can't be failed.
-- When dismantling, does the player choose prefix or suffix, or is it random?
-- Can armour have affixes too, and can affixes move between weapons and armour?
+- ~~When dismantling, does the player choose prefix or suffix, or is it random?~~ The player chooses.
+- ~~Can armour have affixes too, and can affixes move between weapons and armour?~~ All gear can; any affix can be mounted on any item.
 - Should a weapon be able to hold more than one prefix/suffix later on?
 - What comes after Dragon's Roost?
 - Is there a **weapon slot**? The forge design above is built around weapons, but the current slots are head, chest, hands, legs, 2 rings and necklace.

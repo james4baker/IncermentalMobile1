@@ -1,4 +1,4 @@
-import { playerStats } from '../game/player';
+import { playerStats, runDuration } from '../game/player';
 import { areaById } from '../game/progression';
 import { EQUIP_SLOTS, type GameState } from '../game/state';
 import { AREAS } from '../data/areas';
@@ -18,6 +18,9 @@ export function createHomeView(root: HTMLElement): HomeView {
     ['speed', 'Attack speed'],
     ['double', 'Double hit'],
     ['gear', 'Gear bonus'],
+    ['find', 'Gold / XP find'],
+    ['tap', 'Tap'],
+    ['run', 'Run length'],
     ['kills', 'Kills'],
     ['bosses', 'Bosses defeated'],
     ['activity', 'Currently'],
@@ -55,6 +58,9 @@ export function createHomeView(root: HTMLElement): HomeView {
       statEls.speed.textContent = `${stats.attacksPerSecond.toFixed(2)} / s`;
       statEls.double.textContent = formatPct(stats.doubleHitChance * 100);
       statEls.gear.textContent = `+${formatPct(stats.gear.damagePct)} dmg · +${formatPct(stats.gear.speedPct)} speed`;
+      statEls.find.textContent = `+${formatPct(stats.gear.goldPct)} · +${formatPct(stats.gear.xpPct)}`;
+      statEls.tap.textContent = `${formatNumber(stats.tapDamage)} dmg · +${formatPct(stats.gear.tapRadiusPct)} radius`;
+      statEls.run.textContent = `${Math.round(runDuration(state))}s`;
       statEls.kills.textContent = formatNumber(state.kills);
       statEls.bosses.textContent = `${state.bossesDefeated.length} / ${AREAS.length}`;
       statEls.activity.textContent = !run || !area || run.ended
