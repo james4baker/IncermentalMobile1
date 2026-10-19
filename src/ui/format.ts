@@ -11,10 +11,11 @@ function suffixFor(tier: number): string | null {
   return LETTERS[Math.floor(i / LETTERS.length)]! + LETTERS[i % LETTERS.length]!;
 }
 
-/** Format a number per GAME_DESIGN.md: as-is under 1,000, then K/M/B/T/aa/ab... */
+/** Format a number per GAME_DESIGN.md: as-is under 1,000 (max 2 decimals), then K/M/B/T/aa/ab... */
 export function formatNumber(value: Decimal | number): string {
   const d = value instanceof Decimal ? value : new Decimal(value);
-  if (d.lt(1000)) return Math.floor(d.toNumber()).toString();
+  // Up to 2 decimals so small % bonuses stay visible (6.08 dmg); whole numbers stay whole.
+  if (d.lt(1000)) return String(Number(d.toNumber().toFixed(2)));
 
   let tier = Math.floor(d.exponent / 3);
   let shown = d.mantissa * Math.pow(10, d.exponent - tier * 3);

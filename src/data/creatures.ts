@@ -10,4 +10,7 @@ export interface CreatureDef {
 
 export const CREATURES: Record<CreatureId, CreatureDef> = {
   rat: { id: 'rat', name: 'Rat', family: 'rat', icon: '🐀' },
+  ratQueen: { id: 'ratQueen', name: 'Rat Queen', family: 'rat', icon: '👑' },
+  goblin: { id: 'goblin', name: 'Goblin', family: 'goblin', icon: '👺' },
+  goblinLord: { id: 'goblinLord', name: 'Goblin Lord', family: 'goblin', icon: '👹' },
 };
