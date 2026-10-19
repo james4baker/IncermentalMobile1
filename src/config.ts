@@ -19,14 +19,33 @@ const ITEMS = {
   chainHauberk: { damagePct: 3.5, speedPct: 1.5, value: 320 },
   chainGauntlets: { damagePct: 1.5, speedPct: 3, value: 220 },
   chainLeggings: { damagePct: 2.5, speedPct: 1.5, value: 260 },
+  // Spectral (ghosts, shop after Lich King)
+  spectralHood: { damagePct: 4, speedPct: 2.5, value: 900 },
+  spectralRobe: { damagePct: 6, speedPct: 3, value: 1400 },
+  spectralGrips: { damagePct: 3, speedPct: 5.5, value: 1000 },
+  spectralLeggings: { damagePct: 4.5, speedPct: 3, value: 1150 },
+  // Runic (constructs, shop after Colossus Construct)
+  runicHelm: { damagePct: 8, speedPct: 5, value: 4000 },
+  runicCuirass: { damagePct: 12, speedPct: 6, value: 6000 },
+  runicGauntlets: { damagePct: 6, speedPct: 11, value: 4500 },
+  runicGreaves: { damagePct: 9, speedPct: 6, value: 5000 },
+  // Dragonscale (green dragons, shop after Dragonia)
+  dragonscaleHelm: { damagePct: 16, speedPct: 10, value: 20000 },
+  dragonscaleMail: { damagePct: 24, speedPct: 12, value: 30000 },
+  dragonscaleGloves: { damagePct: 12, speedPct: 22, value: 22000 },
+  dragonscaleLegs: { damagePct: 18, speedPct: 12, value: 25000 },
   // Jewellery
   copperRing: { damagePct: 0.5, speedPct: 0.5, value: 40 },
   silverRing: { damagePct: 1.5, speedPct: 1.5, value: 300 },
   goldRing: { damagePct: 4, speedPct: 4, value: 1500 },
+  platinumRing: { damagePct: 8, speedPct: 8, value: 6000 },
   boneCharm: { damagePct: 0.5, speedPct: 0.5, value: 35 },
   jadeAmulet: { damagePct: 3, speedPct: 3, value: 1200 },
   // Uniques
   ratTeethNecklace: { damagePct: 3, speedPct: 1, doubleHitPct: 10, value: 400 },
+  lichPhylactery: { damagePct: 8, speedPct: 4, doubleHitPct: 15, value: 3000 },
+  heartOfTheColossus: { damagePct: 12, speedPct: 8, doubleHitPct: 5, value: 12000 },
+  eyeOfDragonia: { damagePct: 20, speedPct: 15, doubleHitPct: 20, value: 60000 },
 } satisfies Record<string, ItemBalance>;
 
 export type ItemId = keyof typeof ITEMS;
@@ -42,6 +61,12 @@ const CREATURES = {
   ratQueen: { maxHp: 300, gold: 25, xp: 160, keyChance: 0 },
   goblin: { maxHp: 40, gold: 3, xp: 20, keyChance: 1 / 30 },
   goblinLord: { maxHp: 1500, gold: 100, xp: 600, keyChance: 0 },
+  ghost: { maxHp: 130, gold: 8, xp: 50, keyChance: 1 / 30 },
+  lichKing: { maxHp: 3000, gold: 300, xp: 1800, keyChance: 0 },
+  construct: { maxHp: 300, gold: 25, xp: 200, keyChance: 1 / 30 },
+  colossusConstruct: { maxHp: 8500, gold: 1200, xp: 7000, keyChance: 0 },
+  greenDragon: { maxHp: 750, gold: 80, xp: 900, keyChance: 1 / 30 },
+  dragonia: { maxHp: 32000, gold: 6000, xp: 40000, keyChance: 0 },
 };
 
 export type CreatureId = keyof typeof CREATURES;
@@ -69,6 +94,45 @@ const LOOT = {
     { item: 'chainHauberk', chance: 0.3 },
     { item: 'chainGauntlets', chance: 0.3 },
     { item: 'chainLeggings', chance: 0.3 },
+  ],
+  ghost: [
+    { item: 'spectralHood', chance: 1 / 90 },
+    { item: 'spectralRobe', chance: 1 / 90 },
+    { item: 'spectralGrips', chance: 1 / 90 },
+    { item: 'spectralLeggings', chance: 1 / 90 },
+  ],
+  lichKing: [
+    { item: 'lichPhylactery', chance: 0.15 },
+    { item: 'spectralHood', chance: 0.3 },
+    { item: 'spectralRobe', chance: 0.3 },
+    { item: 'spectralGrips', chance: 0.3 },
+    { item: 'spectralLeggings', chance: 0.3 },
+  ],
+  construct: [
+    { item: 'runicHelm', chance: 1 / 100 },
+    { item: 'runicCuirass', chance: 1 / 100 },
+    { item: 'runicGauntlets', chance: 1 / 100 },
+    { item: 'runicGreaves', chance: 1 / 100 },
+  ],
+  colossusConstruct: [
+    { item: 'heartOfTheColossus', chance: 0.12 },
+    { item: 'runicHelm', chance: 0.3 },
+    { item: 'runicCuirass', chance: 0.3 },
+    { item: 'runicGauntlets', chance: 0.3 },
+    { item: 'runicGreaves', chance: 0.3 },
+  ],
+  greenDragon: [
+    { item: 'dragonscaleHelm', chance: 1 / 120 },
+    { item: 'dragonscaleMail', chance: 1 / 120 },
+    { item: 'dragonscaleGloves', chance: 1 / 120 },
+    { item: 'dragonscaleLegs', chance: 1 / 120 },
+  ],
+  dragonia: [
+    { item: 'eyeOfDragonia', chance: 0.1 },
+    { item: 'dragonscaleHelm', chance: 0.3 },
+    { item: 'dragonscaleMail', chance: 0.3 },
+    { item: 'dragonscaleGloves', chance: 0.3 },
+    { item: 'dragonscaleLegs', chance: 0.3 },
   ],
 } satisfies Record<CreatureId, LootEntry[]>;
 

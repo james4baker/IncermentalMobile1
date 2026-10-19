@@ -20,4 +20,16 @@ export const SHOP_POOLS: ShopPool[] = [
     unlockedBy: 'goblinCamp',
     items: ['goldRing', 'jadeAmulet'],
   },
+  {
+    unlockedBy: 'crypt',
+    items: ['spectralHood', 'spectralRobe', 'spectralGrips', 'spectralLeggings'],
+  },
+  {
+    unlockedBy: 'foundry',
+    items: ['runicHelm', 'runicCuirass', 'runicGauntlets', 'runicGreaves', 'platinumRing'],
+  },
+  {
+    unlockedBy: 'dragonRoost',
+    items: ['dragonscaleHelm', 'dragonscaleMail', 'dragonscaleGloves', 'dragonscaleLegs'],
+  },
 ];

@@ -37,7 +37,11 @@ Areas unlock by defeating the previous area's boss, not by level.
 |---|---|---|---|---|
 | Sewers | Start | Rats | 1 in 30 | **Rat Queen** |
 | Goblin Camp | Defeating Rat Queen | Goblins | 1 in 30 | **Goblin Lord** |
-| *TBD* | Defeating Goblin Lord | *TBD* | *TBD* | *TBD* |
+| Haunted Crypt | Defeating Goblin Lord | Ghosts | 1 in 30 | **Lich King** |
+| Ancient Foundry | Defeating Lich King | Constructs | 1 in 30 | **Colossus Construct** |
+| Dragon's Roost | Defeating Colossus Construct | Green Dragons | 1 in 30 | **Dragonia** (black dragon) |
+
+Tuning target: on the expected path (≈30 lesser kills per key + 1 boss), lesser creatures take ~5s to kill on arrival and bosses ~1.5–2 min. The expected path reaches about level 48 after Dragonia.
 
 Level targets: farming rats until the key drops (~30 kills) should put the player at **level 3–4**; defeating the Rat Queen should reach **level 5**.
 
@@ -61,8 +65,14 @@ Equipment slots: **head, chest, hands, legs, ring ×2, necklace**.
 |---|---|---|
 | Torn leather (common) | Rats, starter shop | Cap, Vest, Gloves, Trousers |
 | Chain (uncommon) | Goblins, shop after Rat Queen | Coif, Hauberk, Gauntlets, Leggings |
-| Jewellery | Shop | Copper/Silver/Gold Ring, Bone Charm, Jade Amulet |
+| Spectral (rare) | Ghosts, Lich King, shop after Lich King | Hood, Robe, Grips, Leggings |
+| Runic (epic) | Constructs, Colossus, shop after Colossus | Helm, Cuirass, Gauntlets, Greaves |
+| Dragonscale (epic) | Green Dragons, Dragonia, shop after Dragonia | Helm, Mail, Gloves, Legs |
+| Jewellery | Shop | Copper/Silver/Gold/Platinum Ring, Bone Charm, Jade Amulet |
 | **Rat Teeth Necklace** (unique) | Rat Queen | +dmg, +speed, 10% double hit |
+| **Lich's Phylactery** (unique necklace) | Lich King | +dmg, +speed, 15% double hit |
+| **Heart of the Colossus** (unique ring) | Colossus Construct | +dmg, +speed, 5% double hit |
+| **Eye of Dragonia** (unique ring) | Dragonia | +dmg, +speed, 20% double hit |
 
 ## Loot
 Every creature has a loot table: a list of items, each with its own drop chance, rolled independently on every kill.
@@ -163,7 +173,7 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 - [ ] **v0.3.1:** Collection log tab (monster silhouettes, kill tallies, per-monster drop counts, rarity colours incl. epic)
 - [ ] **v0.4:** Prefixes/suffixes on gear
 - [ ] **v0.5:** Forge: dismantle and mount
-- [ ] **v0.6:** Creature-family bonuses; more areas and bosses
+- [ ] **v0.6:** Creature-family bonuses; more areas and bosses (Crypt, Foundry and Dragon's Roost added early)
 - [ ] **v0.7:** Offline progress
 - [ ] **v0.8:** Polish: animations, sounds, settings
 - [ ] **v1.0:** Capacitor build, test on real devices, store release
@@ -174,6 +184,6 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 - When dismantling, does the player choose prefix or suffix, or is it random?
 - Can armour have affixes too, and can affixes move between weapons and armour?
 - Should a weapon be able to hold more than one prefix/suffix later on?
-- Themes for areas after the Goblin Camp?
+- What comes after Dragon's Roost?
 - Is there a **weapon slot**? The forge design above is built around weapons, but the current slots are head, chest, hands, legs, 2 rings and necklace.
 - Should "Refresh now" in the shop cost gold (or a rewarded ad) once the hourly restock is the norm?

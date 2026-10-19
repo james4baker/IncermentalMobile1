@@ -35,7 +35,7 @@ export function createCollectionView(root: HTMLElement): CollectionView {
     return `
       <div class="log-card ${known ? '' : 'unknown'}">
         <div class="log-head">
-          <span class="log-creature ${known ? '' : 'silhouette'}">${def.icon}</span>
+          <span class="log-creature ${known ? '' : 'silhouette'}"${known && def.tint ? ` style="filter:${def.tint}"` : ''}>${def.icon}</span>
           <span class="log-name">${known ? escapeHtml(def.name) : '???'}${isBoss ? ' <span class="boss-tag">Boss</span>' : ''}</span>
           <span class="log-tally">${known ? `${formatNumber(kills)} kill${kills === 1 ? '' : 's'}` : ''}</span>
         </div>

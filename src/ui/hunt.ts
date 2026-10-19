@@ -84,6 +84,8 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
     iconEl.classList.add('hit');
   }
 
+  let shownAreaId = '';
+
   return {
     render(state) {
       const area = currentArea(state);
@@ -98,11 +100,18 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
         btn.disabled = !unlocked || state.inLair;
         btn.classList.toggle('active', a.id === area.id);
       }
+      // Keep the current area's tab visible in the scrolling row.
+      if (area.id !== shownAreaId) {
+        shownAreaId = area.id;
+        const active = areaButtons.find((b) => b.area.id === area.id)?.btn;
+        if (active) areasEl.scrollLeft = active.offsetLeft - (areasEl.clientWidth - active.offsetWidth) / 2;
+      }
 
       areaNameEl.textContent = state.inLair ? `${CREATURES[area.boss].name}'s Lair` : area.name;
       nameEl.textContent = def.name;
       nameEl.classList.toggle('boss', state.inLair);
       iconEl.textContent = def.icon;
+      iconEl.style.filter = def.tint ?? '';
       hpFill.style.width = `${hpPct}%`;
       hpText.textContent = `${formatNumber(state.creatureHp.max(0))} / ${formatNumber(max)}`;
       statsEl.textContent = `${formatNumber(stats.damage)} dmg · ${stats.attacksPerSecond.toFixed(2)} attacks/s`;

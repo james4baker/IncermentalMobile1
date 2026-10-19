@@ -6,6 +6,8 @@ export interface CreatureDef {
   name: string;
   family: string;
   icon: string;
+  /** Optional CSS filter to recolour the icon (e.g. a black dragon from the green dragon emoji). */
+  tint?: string;
 }
 
 export const CREATURES: Record<CreatureId, CreatureDef> = {
@@ -13,4 +15,10 @@ export const CREATURES: Record<CreatureId, CreatureDef> = {
   ratQueen: { id: 'ratQueen', name: 'Rat Queen', family: 'rat', icon: '👑' },
   goblin: { id: 'goblin', name: 'Goblin', family: 'goblin', icon: '👺' },
   goblinLord: { id: 'goblinLord', name: 'Goblin Lord', family: 'goblin', icon: '👹' },
+  ghost: { id: 'ghost', name: 'Ghost', family: 'undead', icon: '👻' },
+  lichKing: { id: 'lichKing', name: 'Lich King', family: 'undead', icon: '💀' },
+  construct: { id: 'construct', name: 'Construct', family: 'construct', icon: '🤖' },
+  colossusConstruct: { id: 'colossusConstruct', name: 'Colossus Construct', family: 'construct', icon: '🗿' },
+  greenDragon: { id: 'greenDragon', name: 'Green Dragon', family: 'dragon', icon: '🐉' },
+  dragonia: { id: 'dragonia', name: 'Dragonia', family: 'dragon', icon: '🐉', tint: 'grayscale(1) brightness(0.45) contrast(1.4)' },
 };
