@@ -4,7 +4,7 @@ import { dismantle, mount } from './game/affixes';
 import { equip, sell, sellBag, sellGroup, unequip } from './game/items';
 import { closeRun, commandMove, endRun, startRun, tapAt, tickRun } from './game/run';
 import { buy, refreshShop, updateShop } from './game/shop';
-import { loadGame, saveGame } from './save';
+import { loadGame, resetSave, saveGame } from './save';
 import { createCollectionView } from './ui/collection';
 import { createForgeView } from './ui/forge';
 import { createGearView } from './ui/gear';
@@ -21,7 +21,10 @@ const state = loadGame();
 updateShop(state, Date.now());
 
 const shell = createShell(root, 'home');
-const home = createHomeView(shell.screens.home);
+const home = createHomeView(shell.screens.home, () => {
+  resetSave();
+  location.reload();
+});
 const hunt = createHuntView(shell.screens.hunt, {
   start: (areaId, kind) => startRun(state, areaId, kind),
   tap: (x, y) => {

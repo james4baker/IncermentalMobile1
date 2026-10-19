@@ -228,7 +228,11 @@ function deserialize(data: SaveDataV6): GameState {
   return state;
 }
 
+/** Set by resetSave so the page's own close/hide save can't write the old progress back. */
+let resetting = false;
+
 export function saveGame(state: GameState): void {
+  if (resetting) return;
   try {
     localStorage.setItem(CONFIG.save.key, JSON.stringify(serialize(state)));
   } catch (err) {
@@ -249,5 +253,15 @@ export function loadGame(): GameState {
   } catch (err) {
     console.warn('Load failed, starting fresh', err);
     return createInitialState();
+  }
+}
+
+/** Erase all progress. Call, then reload the page. */
+export function resetSave(): void {
+  resetting = true;
+  try {
+    localStorage.removeItem(CONFIG.save.key);
+  } catch (err) {
+    console.warn('Reset failed', err);
   }
 }

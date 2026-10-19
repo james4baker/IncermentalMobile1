@@ -12,7 +12,10 @@ export interface HomeView {
 }
 
 /** Player overview: figure wearing current gear, plus stats. */
-export function createHomeView(root: HTMLElement): HomeView {
+/** How long the reset button waits for its confirming second tap. */
+const CONFIRM_MS = 3000;
+
+export function createHomeView(root: HTMLElement, onReset: () => void): HomeView {
   const rows = [
     ['damage', 'Damage'],
     ['speed', 'Attack speed'],
@@ -33,8 +36,16 @@ export function createHomeView(root: HTMLElement): HomeView {
       <dl class="statlist">
         ${rows.map(([key, label]) => `<dt>${label}</dt><dd data-stat="${key}"></dd>`).join('')}
       </dl>
+      <button type="button" class="btn btn-danger home-reset" data-reset></button>
     </div>
   `;
+  const resetBtn = root.querySelector<HTMLButtonElement>('[data-reset]')!;
+  let resetArmedUntil = 0;
+  resetBtn.addEventListener('click', () => {
+    // Two taps: this erases everything.
+    if (performance.now() < resetArmedUntil) onReset();
+    else resetArmedUntil = performance.now() + CONFIRM_MS;
+  });
 
   const figureEl = root.querySelector<HTMLElement>('[data-figure]')!;
   const statEls = Object.fromEntries(
@@ -68,6 +79,9 @@ export function createHomeView(root: HTMLElement): HomeView {
         : run.kind === 'boss'
           ? `Fighting the ${CREATURES[area.boss].name}`
           : `Hunting in the ${area.name}`;
+      const armed = performance.now() < resetArmedUntil;
+      resetBtn.classList.toggle('armed', armed);
+      resetBtn.textContent = armed ? 'Tap again to erase all progress' : 'Reset progress';
     },
   };
 }

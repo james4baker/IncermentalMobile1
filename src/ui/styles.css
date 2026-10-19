@@ -849,3 +849,7 @@ body {
 .affix-source {
   font-size: 11px;
 }
+
+.home-reset {
+  margin: 24px 0 8px;
+}
