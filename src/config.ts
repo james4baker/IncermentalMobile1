@@ -124,7 +124,7 @@ export const CONFIG = {
 
   save: {
     key: 'incremental1.save',
-    version: 3,
+    version: 4,
     intervalMs: 5000,
   },
 } as const;

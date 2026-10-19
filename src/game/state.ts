@@ -36,6 +36,10 @@ export interface GameState {
   equipment: Record<EquipSlot, ItemInstance | null>;
   nextItemUid: number;
   shop: { offers: ShopOffer[]; refreshedAt: number };
+  /** Collection log: kills per creature. */
+  killCounts: Partial<Record<CreatureId, number>>;
+  /** Collection log: how many of each item each creature has dropped. */
+  drops: Partial<Record<CreatureId, Partial<Record<ItemId, number>>>>;
 }
 
 export function emptyEquipment(): Record<EquipSlot, ItemInstance | null> {
@@ -61,5 +65,7 @@ export function createInitialState(): GameState {
     nextItemUid: 1,
     // refreshedAt 0 makes the shop stock itself on the first frame.
     shop: { offers: [], refreshedAt: 0 },
+    killCounts: {},
+    drops: {},
   };
 }

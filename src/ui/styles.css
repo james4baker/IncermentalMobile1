@@ -296,8 +296,175 @@ body {
   color: #6cb4ff;
 }
 
+.rarity-epic {
+  color: #c084fc;
+}
+
 .rarity-unique {
   color: #ff9f43;
+}
+
+/* Collection log */
+.log-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.log-summary > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background: var(--panel);
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.log-summary-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.log-area {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.log-card {
+  margin-bottom: 8px;
+  padding: 10px 12px 12px;
+  background: var(--panel);
+  border-radius: 12px;
+}
+
+.log-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.log-creature {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.log-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.log-card.unknown .log-name {
+  color: var(--muted);
+}
+
+.boss-tag {
+  margin-left: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #8e3b46;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.log-tally {
+  font-weight: 700;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Undiscovered: black fill with a faint light outline. */
+.silhouette {
+  filter: brightness(0) drop-shadow(0 0 1px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.6));
+}
+
+.log-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: 10px 6px;
+}
+
+.log-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.log-orb {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.log-item.missing .log-orb {
+  opacity: 0.35;
+}
+
+.log-item-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.log-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid #4a4f63;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.log-item-name {
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.log-item.missing .log-item-name {
+  color: var(--muted);
+}
+
+.rarity-bg-common {
+  background: #6b7280;
+}
+
+.rarity-bg-uncommon {
+  background: #2f9e5b;
+}
+
+.rarity-bg-rare {
+  background: #2f7fd6;
+}
+
+.rarity-bg-epic {
+  background: #8e44ad;
+}
+
+.rarity-bg-unique {
+  background: #e67e22;
 }
 
 .topbar {

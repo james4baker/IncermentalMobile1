@@ -68,6 +68,18 @@ Lesser creatures drop their area's basic gear; bosses drop better gear and uniqu
 
 Drop chances, item bonuses and values live in `config.ts`.
 
+## Collection Log (achievements)
+A tab listing every monster, grouped by area, to give a sense of achievement.
+- **Undefeated monsters** are shown as a blacked-out silhouette (outline only) with the name hidden ("???").
+- **Defeated monsters** show their icon, name and a **kill tally**.
+- Under each monster are its possible drops on rarity-coloured circles:
+  common grey, uncommon green, rare blue, epic purple, unique orange.
+  - **Collected** items show their icon, name and how many have dropped from that monster.
+  - **Uncollected** items are blacked out.
+- Summary at the top: monsters defeated and drop slots found (e.g. 2/4 monsters, 5/15 drops).
+- Counts are per monster: the same item dropped by two monsters fills two slots. Shop purchases don't count.
+- A toast appears for a first kill of a monster and for each new drop slot.
+
 ## Shop
 - Shows a handful of items (5) picked at random from the shop's pool.
 - The pool grows as bosses are defeated (starter → +chain and silver after Rat Queen → +gold ring and jade after Goblin Lord). Pools are in `data/shop.ts`.
@@ -133,8 +145,9 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 2. **Hunt:** current creature, health bar, tap to attack, area tabs, keys and "Enter lair"
 3. **Gear:** equipped slots (tap to remove) and the bag, with equip and sell buttons
 4. **Shop:** current stock, restock timer, refresh button
-5. **Forge (later):** dismantle items, affix inventory, mount affixes (shows cost)
-6. **Settings (later):** sound, number notation, export/import save, reset
+5. **Collection:** collection log of monsters and their drops (see above)
+6. **Forge (later):** dismantle items, affix inventory, mount affixes (shows cost)
+7. **Settings (later):** sound, number notation, export/import save, reset
 
 ## Monetisation (later, optional)
 - Rewarded ad: double gold for 30 minutes
@@ -145,6 +158,7 @@ Gold and level/XP are shown in a top bar on every screen; screens are switched w
 - [x] **v0.1:** Fight a rat (auto-attack + tap), gold and XP, saving
 - [ ] **v0.2:** Levels 1–999 (RuneScape curve) boosting damage and attack speed; Sewers (Rats → Rat Queen); key drops and lairs; boss defeat unlocks Goblin Camp (Goblins → Goblin Lord)
 - [ ] **v0.3:** Gear (7 slots, % damage/speed bonuses, Rat Teeth Necklace double hit), loot tables, Home/Gear/Shop screens, selling, shop with boss-unlocked stock and hourly restock
+- [ ] **v0.3.1:** Collection log tab (monster silhouettes, kill tallies, per-monster drop counts, rarity colours incl. epic)
 - [ ] **v0.4:** Prefixes/suffixes on gear
 - [ ] **v0.5:** Forge: dismantle and mount
 - [ ] **v0.6:** Creature-family bonuses; more areas and bosses

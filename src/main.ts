@@ -5,6 +5,7 @@ import { equip, sell, unequip } from './game/items';
 import { enterLair, selectArea } from './game/progression';
 import { buy, refreshShop, updateShop } from './game/shop';
 import { loadGame, saveGame } from './save';
+import { createCollectionView } from './ui/collection';
 import { createGearView } from './ui/gear';
 import { createHomeView } from './ui/home';
 import { createHuntView } from './ui/hunt';
@@ -38,6 +39,7 @@ const shop = createShopView(shell.screens.shop, {
   buy: (index) => buy(state, index),
   refresh: () => refreshShop(state, Date.now()),
 });
+const collection = createCollectionView(shell.screens.log);
 
 let last = performance.now();
 function frame(now: number): void {
@@ -63,6 +65,9 @@ function frame(now: number): void {
       break;
     case 'shop':
       shop.render(state, wallClock);
+      break;
+    case 'log':
+      collection.render(state);
       break;
   }
   requestAnimationFrame(frame);

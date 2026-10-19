@@ -2,7 +2,7 @@
 import type { ItemId } from '../config';
 
 export type ItemSlot = 'head' | 'chest' | 'hands' | 'legs' | 'ring' | 'necklace';
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'unique';
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'unique';
 
 export interface ItemDef {
   id: ItemId;

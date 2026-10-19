@@ -8,6 +8,7 @@ export const SCREENS = [
   { id: 'hunt', label: 'Hunt', icon: '⚔️' },
   { id: 'gear', label: 'Gear', icon: '🎒' },
   { id: 'shop', label: 'Shop', icon: '🛒' },
+  { id: 'log', label: 'Collection', icon: '📖' },
 ] as const;
 export type ScreenId = (typeof SCREENS)[number]['id'];
 

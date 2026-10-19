@@ -1,5 +1,6 @@
 import Decimal from 'break_infinity.js';
-import { CONFIG, type ItemId } from '../config';
+import { CONFIG, type CreatureId, type ItemId } from '../config';
+import { killCount, recordKill } from './collection';
 import { addItem } from './items';
 import { levelForXp } from './levels';
 import { rollLoot } from './loot';
@@ -11,6 +12,8 @@ export type GameEvent =
   | { type: 'damage'; amount: Decimal; source: 'auto' | 'tap'; double: boolean }
   | { type: 'kill'; gold: Decimal; xp: Decimal }
   | { type: 'loot'; itemIds: ItemId[] }
+  | { type: 'firstKill'; creatureId: CreatureId }
+  | { type: 'collection'; creatureId: CreatureId; itemIds: ItemId[] }
   | { type: 'key'; areaId: string }
   | { type: 'levelUp'; level: number }
   | { type: 'bossDefeated'; areaId: string; unlockedAreaId?: string };
@@ -34,6 +37,10 @@ function onKill(state: GameState, events: GameEvent[]): void {
   const drops = rollLoot(state.creatureId);
   for (const itemId of drops) addItem(state, itemId);
   if (drops.length > 0) events.push({ type: 'loot', itemIds: drops });
+
+  const newEntries = recordKill(state, state.creatureId, drops);
+  if (killCount(state, state.creatureId) === 1) events.push({ type: 'firstKill', creatureId: state.creatureId });
+  if (newEntries.length > 0) events.push({ type: 'collection', creatureId: state.creatureId, itemIds: newEntries });
 
   const levelAfter = levelForXp(state.xp);
   if (levelAfter > levelBefore) events.push({ type: 'levelUp', level: levelAfter });

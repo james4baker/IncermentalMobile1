@@ -27,6 +27,12 @@ export function toastEvents(events: GameEvent[]): void {
       case 'loot':
         for (const id of ev.itemIds) toast(`🎁 ${ITEMS[id].name}`, `rarity-${ITEMS[id].rarity}`);
         break;
+      case 'firstKill':
+        toast(`📖 New monster logged: ${CREATURES[ev.creatureId].name}`);
+        break;
+      case 'collection':
+        for (const id of ev.itemIds) toast(`📖 New collection entry: ${ITEMS[id].name}`, `rarity-${ITEMS[id].rarity}`);
+        break;
       case 'key': {
         const area = AREAS.find((a) => a.id === ev.areaId);
         toast(`🗝️ ${area?.keyName ?? 'Key'} dropped!`);
