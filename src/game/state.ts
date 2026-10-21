@@ -39,6 +39,26 @@ export interface Enemy {
   wanderTimer: number;
 }
 
+/** A tile-fight wave: red tiles strike after a warning; blue tiles can be tapped for damage. */
+export interface TileWave {
+  kind: 'red' | 'blue';
+  /** Per tile: red = will strike / has struck; blue = still up. */
+  tiles: boolean[];
+  age: number;
+  /** Red waves: the strike has landed. */
+  struck: boolean;
+}
+
+/** Boss-room state for tile-fight bosses. */
+export interface TileFight {
+  lives: number;
+  /** Tile the player stands on (0 top-left, 1 top-right, 2 bottom-left, 3 bottom-right). */
+  playerTile: number;
+  wave: TileWave | null;
+  /** Seconds until the next wave starts. */
+  nextWave: number;
+}
+
 /** Totals for the results screen. Rewards are applied to the game state as they happen. */
 export interface RunLoot {
   gold: Decimal;
@@ -70,8 +90,10 @@ export interface RunState {
   nextEnemyId: number;
   spawnTimer: number;
   loot: RunLoot;
+  /** Tile-fight boss rooms only. */
+  tiles: TileFight | null;
   ended: boolean;
-  endReason: 'time' | 'left' | 'cleared' | null;
+  endReason: 'time' | 'left' | 'cleared' | 'defeated' | null;
 }
 
 export interface GameState {

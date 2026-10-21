@@ -284,6 +284,26 @@ export const CONFIG = {
     bossRadius: 9,
   },
 
+  /** Tile fights: bosses with mechanic 'tiles' in data/creatures.ts. Four tiles sit in the corners around the boss. */
+  tileFight: {
+    lives: 3,
+    /** Delay before the first wave. */
+    firstWaveSeconds: 2,
+    /** A new wave (red or blue) starts this often. */
+    waveSeconds: 2,
+    /** Red tiles flash for this long, then strike; blue tiles stay up this long. */
+    warnSeconds: 1.5,
+    /** Chance a wave is red (otherwise blue). */
+    redChance: 0.6,
+    /** Blue tiles per blue wave. */
+    blueTiles: 2,
+    /** Damage per blue tile tapped, as a fraction of the boss's max HP. */
+    blueDamageFraction: 0.05,
+    /** Tile centres sit this far from the boss on each axis; tiles are this wide (world units). */
+    tileOffset: 22,
+    tileSize: 24,
+  },
+
   tick: {
     /** Largest delta (seconds) simulated in one frame. Stops huge jumps after the tab sleeps. */
     maxDeltaSeconds: 1,

@@ -2,10 +2,15 @@ import { CONFIG } from '../config';
 import { CREATURES } from '../data/creatures';
 import { areaById } from '../game/progression';
 import type { GameEvent } from '../game/events';
-import type { RunState } from '../game/state';
+import type { RunState, TileFight } from '../game/state';
+import { TILE_COUNT, tileCenter } from '../game/tileFight';
 import { formatNumber } from './format';
 
 const A = CONFIG.arena;
+const T = CONFIG.tileFight;
+/** How long a red strike stays lit, and the red screen flash when hit. */
+const STRIKE_SECONDS = 0.35;
+const HIT_FLASH_SECONDS = 0.4;
 const EMOJI_FONT = '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif';
 
 interface Floater {
@@ -17,7 +22,7 @@ interface Floater {
   age: number;
 }
 interface Effect {
-  kind: 'ring' | 'swing';
+  kind: 'ring' | 'swing' | 'hitFlash';
   /** Ring radius (tap strikes). */
   radius: number;
   x: number;
@@ -45,6 +50,8 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
   let effects: Effect[] = [];
   /** Last known x per enemy, to flip sprites toward their direction of travel. */
   const lastX = new Map<number, { x: number; facingRight: boolean }>();
+  /** Where the player is drawn; eases toward the real position so tile dashes don't teleport. */
+  let shown: { x: number; y: number } | null = null;
 
   function resize(): void {
     const w = wrap.clientWidth;
@@ -70,6 +77,35 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
     ctx.restore();
   }
 
+  function drawTiles(tf: TileFight): void {
+    const half = T.tileSize / 2;
+    const wave = tf.wave;
+    for (let i = 0; i < TILE_COUNT; i++) {
+      const c = tileCenter(i);
+      let fill = 'rgba(255,255,255,0.06)';
+      let stroke = 'rgba(255,255,255,0.25)';
+      if (wave?.tiles[i]) {
+        if (wave.kind === 'blue') {
+          fill = `rgba(64,150,255,${0.5 + 0.2 * Math.sin(wave.age * 12)})`;
+          stroke = '#7cc6fe';
+        } else if (!wave.struck) {
+          // Warning: blink, faster as the strike nears.
+          const blink = Math.floor(wave.age * (4 + wave.age * 6)) % 2 === 0;
+          fill = `rgba(217,83,79,${blink ? 0.55 : 0.18})`;
+          stroke = '#d9534f';
+        } else if (wave.age < T.warnSeconds + STRIKE_SECONDS) {
+          fill = `rgba(255,70,60,${0.9 * (1 - (wave.age - T.warnSeconds) / STRIKE_SECONDS)})`;
+          stroke = '#ff6b5e';
+        }
+      }
+      ctx.fillStyle = fill;
+      ctx.fillRect(c.x - half, c.y - half, T.tileSize, T.tileSize);
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(c.x - half, c.y - half, T.tileSize, T.tileSize);
+    }
+  }
+
   function hpBar(x: number, y: number, width: number, pct: number): void {
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(x - width / 2, y, width, 1.4);
@@ -89,6 +125,7 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
       floaters = [];
       effects = [];
       lastX.clear();
+      shown = null;
     },
 
     showEvents(events) {
@@ -97,8 +134,8 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
           case 'damage':
             floaters.push({
               text: ev.double ? `-${formatNumber(ev.amount)} ×2!` : `-${formatNumber(ev.amount)}`,
-              color: ev.double ? '#ff5e7e' : ev.source === 'tap' ? '#ff8a65' : '#e8e6e1',
-              size: ev.source === 'tap' || ev.double ? 4.4 : 3.6,
+              color: ev.double ? '#ff5e7e' : ev.source === 'tile' ? '#7cc6fe' : ev.source === 'tap' ? '#ff8a65' : '#e8e6e1',
+              size: ev.source === 'tile' ? 5.5 : ev.source === 'tap' || ev.double ? 4.4 : 3.6,
               x: ev.x + (Math.random() - 0.5) * 4,
               y: ev.y - 4,
               age: 0,
@@ -109,6 +146,10 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
             break;
           case 'tap':
             effects.push({ kind: 'ring', radius: ev.radius, x: ev.x, y: ev.y, toX: 0, toY: 0, age: 0 });
+            break;
+          case 'playerHit':
+            floaters.push({ text: '-1 ❤️', color: '#ff5e5e', size: 5, x: ev.x, y: ev.y - 6, age: 0 });
+            effects.push({ kind: 'hitFlash', radius: 0, x: 0, y: 0, toX: 0, toY: 0, age: 0 });
             break;
           case 'swing':
             effects.push({ kind: 'swing', radius: 0, x: ev.fromX, y: ev.fromY, toX: ev.toX, toY: ev.toY, age: 0 });
@@ -132,6 +173,8 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
         ctx.lineWidth = 1;
         ctx.strokeRect(0.5, 0.5, A.width - 1, A.height - 1);
       }
+
+      if (run.tiles) drawTiles(run.tiles);
 
       // Move marker.
       const mt = run.player.moveTarget;
@@ -172,9 +215,13 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
       for (const id of lastX.keys()) if (!alive.has(id)) lastX.delete(id);
 
       // Effects.
-      effects = effects.filter((fx) => (fx.age += dt) < (fx.kind === 'ring' ? 0.35 : 0.15));
+      const lifetime = { ring: 0.35, swing: 0.15, hitFlash: HIT_FLASH_SECONDS };
+      effects = effects.filter((fx) => (fx.age += dt) < lifetime[fx.kind]);
       for (const fx of effects) {
-        if (fx.kind === 'ring') {
+        if (fx.kind === 'hitFlash') {
+          ctx.fillStyle = `rgba(255,40,40,${0.35 * (1 - fx.age / HIT_FLASH_SECONDS)})`;
+          ctx.fillRect(0, 0, A.width, A.height);
+        } else if (fx.kind === 'ring') {
           const t = fx.age / 0.35;
           ctx.strokeStyle = `rgba(255,138,101,${1 - t})`;
           ctx.lineWidth = 0.8;
@@ -192,7 +239,11 @@ export function createArenaRenderer(canvas: HTMLCanvasElement, wrap: HTMLElement
       }
 
       // Player.
-      const p = run.player;
+      shown ??= { x: run.player.x, y: run.player.y };
+      const ease = Math.min(1, dt * 20);
+      shown.x += (run.player.x - shown.x) * ease;
+      shown.y += (run.player.y - shown.y) * ease;
+      const p = shown;
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
       ctx.ellipse(p.x, p.y + A.playerRadius * 0.9, A.playerRadius * 0.9, A.playerRadius * 0.35, 0, 0, Math.PI * 2);

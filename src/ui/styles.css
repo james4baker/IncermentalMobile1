@@ -700,6 +700,10 @@ body {
   transition: width 0.1s linear;
 }
 
+.timerbar.lives .timerbar-fill {
+  background: #7a2e2e;
+}
+
 .timerbar-text {
   position: absolute;
   inset: 0;

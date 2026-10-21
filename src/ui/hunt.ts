@@ -1,3 +1,4 @@
+import { CONFIG } from '../config';
 import { AREAS } from '../data/areas';
 import { CREATURES } from '../data/creatures';
 import { ITEMS } from '../data/items';
@@ -39,7 +40,7 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
     <div class="run" data-run hidden>
       <div class="run-hud">
         <div class="run-title" data-runtitle></div>
-        <div class="timerbar"><div class="timerbar-fill" data-timerfill></div><span class="timerbar-text" data-timertext></span></div>
+        <div class="timerbar" data-timer><div class="timerbar-fill" data-timerfill></div><span class="timerbar-text" data-timertext></span></div>
         <div class="run-tally" data-tally></div>
       </div>
       <div class="arena-wrap" data-arenawrap><canvas class="arena" data-canvas></canvas></div>
@@ -58,6 +59,7 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
   const cardsEl = q('[data-cards]');
   const runEl = q('[data-run]');
   const runTitleEl = q('[data-runtitle]');
+  const timerEl = q('[data-timer]');
   const timerFill = q('[data-timerfill]');
   const timerText = q('[data-timertext]');
   const tallyEl = q('[data-tally]');
@@ -163,7 +165,12 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
     const area = areaById(run.areaId)!;
     runTitleEl.textContent = run.kind === 'boss' ? `${CREATURES[area.boss].name}'s Lair` : area.name;
     const left = timeLeft(run);
-    if (left === null) {
+    timerEl.classList.toggle('lives', run.tiles !== null);
+    if (run.tiles) {
+      const lives = Math.max(0, run.tiles.lives);
+      timerFill.style.width = `${(lives / CONFIG.tileFight.lives) * 100}%`;
+      timerText.textContent = '❤️'.repeat(lives) + '🖤'.repeat(CONFIG.tileFight.lives - lives);
+    } else if (left === null) {
       timerFill.style.width = '100%';
       timerText.textContent = 'No time limit';
     } else {
@@ -173,7 +180,8 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
     const l = run.loot;
     tallyEl.textContent = `⚔️ ${l.kills}   🪙 ${formatNumber(l.gold)}   ✨ ${formatNumber(l.xp)}   🎁 ${l.items.length}   🗝️ ${l.keys}`;
     moveBtn.classList.toggle('armed', moveMode);
-    hintEl.textContent = moveMode ? 'Tap where to go' : 'Tap to strike';
+    moveBtn.hidden = run.tiles !== null;
+    hintEl.textContent = run.tiles ? 'Dodge red tiles · tap blue tiles' : moveMode ? 'Tap where to go' : 'Tap to strike';
     const armed = performance.now() < endConfirmUntil;
     endBtn.textContent = armed ? 'Tap again' : run.kind === 'boss' ? 'Leave' : 'End run';
     endBtn.classList.toggle('armed', armed);
@@ -182,7 +190,13 @@ export function createHuntView(root: HTMLElement, actions: HuntActions): HuntVie
   function resultsHtml(state: GameState, run: RunState): string {
     const l = run.loot;
     const title =
-      run.endReason === 'time' ? "Time's up!" : run.endReason === 'cleared' ? 'Boss room cleared!' : 'Run ended';
+      run.endReason === 'time'
+        ? "Time's up!"
+        : run.endReason === 'cleared'
+          ? 'Boss room cleared!'
+          : run.endReason === 'defeated'
+            ? 'Defeated! The key is lost.'
+            : 'Run ended';
     const levelNow = levelForXp(state.xp);
     const groups = new Map<string, { item: ItemInstance; n: number }>();
     for (const item of l.items) {

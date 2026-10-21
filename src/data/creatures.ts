@@ -8,11 +8,13 @@ export interface CreatureDef {
   icon: string;
   /** Optional CSS filter to recolour the icon (e.g. a black dragon from the green dragon emoji). */
   tint?: string;
+  /** Boss fight mechanic. 'tiles': the boss stands still between four tiles; dodge red waves, tap blue tiles. */
+  mechanic?: 'tiles';
 }
 
 export const CREATURES: Record<CreatureId, CreatureDef> = {
   rat: { id: 'rat', name: 'Rat', family: 'rat', icon: '🐀' },
-  ratQueen: { id: 'ratQueen', name: 'Rat Queen', family: 'rat', icon: '👑' },
+  ratQueen: { id: 'ratQueen', name: 'Rat Queen', family: 'rat', icon: '👑', mechanic: 'tiles' },
   goblin: { id: 'goblin', name: 'Goblin', family: 'goblin', icon: '👺' },
   goblinLord: { id: 'goblinLord', name: 'Goblin Lord', family: 'goblin', icon: '👹' },
   ghost: { id: 'ghost', name: 'Ghost', family: 'undead', icon: '👻' },

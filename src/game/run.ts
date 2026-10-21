@@ -8,9 +8,11 @@ import { levelForXp } from './levels';
 import { rollLoot } from './loot';
 import { playerStats, runDuration } from './player';
 import { areaById, isAreaUnlocked, keysHeld, nextArea, spendKey } from './progression';
-import type { Enemy, GameState, RunKind, RunState } from './state';
+import type { Enemy, GameState, RunKind, RunState, TileFight } from './state';
+import { isTileBoss, newTileFight, randomWave, tileAt, tileBossPosition, tileCenter } from './tileFight';
 
 const A = CONFIG.arena;
+const T = CONFIG.tileFight;
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.hypot(ax - bx, ay - by);
@@ -43,6 +45,7 @@ function spawnEnemy(run: RunState, creatureId: CreatureId, isBoss: boolean, rng:
     y = r + rng() * (A.height - 2 * r);
     if (dist(x, y, run.player.x, run.player.y) >= A.spawnMinDistance) break;
   }
+  if (isBoss && isTileBoss(creatureId)) ({ x, y } = tileBossPosition());
   const maxHp = new Decimal(CONFIG.creatures[creatureId].maxHp);
   run.enemies.push({
     id: run.nextEnemyId++,
@@ -75,9 +78,11 @@ export function startRun(state: GameState, areaId: string, kind: RunKind, rng: (
     nextEnemyId: 1,
     spawnTimer: 0,
     loot: { gold: new Decimal(0), xp: new Decimal(0), kills: 0, items: [], keys: 0, bossesDefeated: 0 },
+    tiles: kind === 'boss' && isTileBoss(area.boss) ? newTileFight() : null,
     ended: false,
     endReason: null,
   };
+  if (run.tiles) Object.assign(run.player, tileCenter(run.tiles.playerTile));
   if (kind === 'boss') {
     spawnEnemy(run, area.boss, true, rng);
   } else {
@@ -158,6 +163,8 @@ function onKill(state: GameState, run: RunState, enemy: Enemy, events: GameEvent
     // With keys left, the next boss steps in; otherwise the room is cleared.
     if (spendKey(state, area.id)) {
       spawnEnemy(run, area.boss, true, rng);
+      // A fresh boss means fresh lives.
+      if (run.tiles) run.tiles = newTileFight(run.tiles.playerTile);
     } else {
       endRun(state, 'cleared');
       events.push({ type: 'runEnded' });
@@ -177,7 +184,7 @@ function hit(
   run: RunState,
   enemy: Enemy,
   amount: Decimal,
-  source: 'auto' | 'tap',
+  source: 'auto' | 'tap' | 'tile',
   double: boolean,
   events: GameEvent[],
   rng: () => number,
@@ -199,6 +206,10 @@ export function tapAt(state: GameState, x: number, y: number, rng: () => number 
   const run = state.run;
   if (!run || run.ended) return [];
   const stats = playerStats(state);
+  if (run.tiles) {
+    const tile = tileAt(x, y);
+    if (tile !== null) return tapTile(state, run, run.tiles, tile, rng);
+  }
   const events: GameEvent[] = [{ type: 'tap', x, y, radius: stats.tapRadius }];
   const amount = stats.tapDamage;
   const targets = run.enemies.filter((e) => dist(e.x, e.y, x, y) <= stats.tapRadius + (e.isBoss ? A.bossRadius : A.enemyRadius));
@@ -207,6 +218,46 @@ export function tapAt(state: GameState, x: number, y: number, rng: () => number 
     attack(state, run, enemy, amount, 'tap', events, rng);
   }
   return events;
+}
+
+/** Tile fights: step onto a tile; a blue tile also hits the boss. */
+function tapTile(state: GameState, run: RunState, tf: TileFight, tile: number, rng: () => number): GameEvent[] {
+  const events: GameEvent[] = [];
+  tf.playerTile = tile;
+  Object.assign(run.player, tileCenter(tile));
+  const wave = tf.wave;
+  const boss = run.enemies.find((e) => e.isBoss);
+  if (wave?.kind === 'blue' && wave.tiles[tile] && boss) {
+    wave.tiles[tile] = false;
+    hit(state, run, boss, boss.maxHp.mul(T.blueDamageFraction).ceil(), 'tile', false, events, rng);
+  }
+  return events;
+}
+
+/** Tile fights: run the red/blue waves. */
+function stepTiles(state: GameState, run: RunState, tf: TileFight, h: number, events: GameEvent[], rng: () => number): void {
+  const wave = tf.wave;
+  if (wave) {
+    wave.age += h;
+    if (wave.kind === 'red' && !wave.struck && wave.age >= T.warnSeconds) {
+      wave.struck = true;
+      if (wave.tiles[tf.playerTile]) {
+        tf.lives -= 1;
+        events.push({ type: 'playerHit', livesLeft: tf.lives, x: run.player.x, y: run.player.y });
+        if (tf.lives <= 0) {
+          endRun(state, 'defeated');
+          events.push({ type: 'runEnded' });
+          return;
+        }
+      }
+    }
+    if (wave.kind === 'blue' && wave.age >= T.warnSeconds) tf.wave = null;
+  }
+  tf.nextWave -= h;
+  if (tf.nextWave <= 0) {
+    tf.wave = randomWave(rng);
+    tf.nextWave += T.waveSeconds;
+  }
 }
 
 function nearestEnemy(run: RunState): Enemy | undefined {
@@ -255,7 +306,12 @@ function step(state: GameState, run: RunState, h: number, events: GameEvent[], r
     return;
   }
 
-  for (const e of run.enemies) wander(e, h, rng);
+  if (run.tiles) {
+    stepTiles(state, run, run.tiles, h, events, rng);
+    if (run.ended) return;
+  } else {
+    for (const e of run.enemies) wander(e, h, rng);
+  }
 
   if (run.kind === 'hunt' && run.enemies.length < A.maxEnemies) {
     run.spawnTimer -= h;
@@ -277,17 +333,19 @@ function step(state: GameState, run: RunState, h: number, events: GameEvent[], r
     p.targetId = target?.id ?? null;
   }
 
-  if (p.moveTarget) {
+  // Tile fights: the player stays on their tile (moved by tapping tiles) and attacks the boss from there.
+  if (p.moveTarget && !run.tiles) {
     stepToward(p, p.moveTarget.x, p.moveTarget.y, A.playerSpeed * h);
     if (p.x === p.moveTarget.x && p.y === p.moveTarget.y) p.moveTarget = null;
-  } else if (target && dist(p.x, p.y, target.x, target.y) > reach(target) * 0.8) {
+  } else if (target && !run.tiles && dist(p.x, p.y, target.x, target.y) > reach(target) * 0.8) {
     stepToward(p, target.x, target.y, A.playerSpeed * h);
   }
 
   // Attack the target if it's in reach, otherwise anything in reach (e.g. while being moved).
   if (p.cooldown <= 0) {
-    const inReach =
-      target && dist(p.x, p.y, target.x, target.y) <= reach(target)
+    const inReach = run.tiles
+      ? target
+      : target && dist(p.x, p.y, target.x, target.y) <= reach(target)
         ? target
         : run.enemies.find((e) => dist(p.x, p.y, e.x, e.y) <= reach(e));
     if (inReach) {

@@ -31,7 +31,15 @@ Hunting run → loot + keys → boss room → next area unlocks → better gear 
 - No player health for now; the timer is the only limit.
 
 ### Boss rooms (placeholder)
-Boss rooms will get their own design. For now: entering spends a key and the boss appears alone in the arena, with **no time limit** (can't be failed). If another key is held when it dies, the next boss steps in; otherwise the room is cleared and the results screen shows.
+Boss rooms will get their own design. For now: entering spends a key and the boss appears alone in the arena, with **no time limit**. If another key is held when it dies, the next boss steps in; otherwise the room is cleared and the results screen shows. Bosses without a mechanic can't be failed.
+
+### Tile fights (Rat Queen)
+Bosses with `mechanic: 'tiles'` (in `data/creatures.ts`) fight differently. Numbers are in `config.ts` under `tileFight`.
+- The boss stands still in the centre with **4 tiles** in the corners around it. The player stands on a tile and auto-attacks the boss from there. **Tap a tile** to move onto it (no Move button).
+- Every `waveSeconds` (2s) a wave starts:
+  - **Red:** 3 tiles flash for `warnSeconds` (1.5s, blinking faster near the end), then strike. One tile is safe. Standing on a red tile when it strikes costs a life.
+  - **Blue:** 2 tiles turn blue for `warnSeconds`. Tapping a blue tile deals `blueDamageFraction` (5%) of the boss's max HP.
+- **3 lives** (shown as hearts in place of the timer). Losing them all ends the room in defeat and the key is spent. Lives reset when a chained boss steps in.
 
 ## Player Progression
 - **One combat level, 1 to 999.** Killing creatures gives XP.
